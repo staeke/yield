@@ -14,6 +14,7 @@ function makeGenerators(objOrMethod, thisScope) {
 		return function* () {
 			var args = arguments;
 			return function(cb) {
+				args = _.toArray(args);
 				args.push(cb);
 				return objOrMethod.apply(thisScope, args);
 			}
@@ -24,6 +25,7 @@ function makeGenerators(objOrMethod, thisScope) {
 		_.each(_.functions(objOrMethod), function(fnName) {
 			copy[fnName] = makeGenerators(objOrMethod[fnName], objOrMethod)
 		});
+		return copy;
 	}
 	else {
 		throw new Error("Unsupported type for conversion to generator. Only shallow objects and methods supported. Got", objOrMethod);

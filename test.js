@@ -1,7 +1,7 @@
-Yield = require("./yield");
+var y = require("./yield");
 var $ = require('jquery-deferred');
 
-Yield.log = console.log;
+y.log = console.log;
 var log = console.log;
 
 function* ssleep(timeout) {
@@ -14,16 +14,27 @@ function* ssleep(timeout) {
 	}
 }
 
-(function* someInner() {
+function asyncSleep(timeout, cb) {
+	log("Called", arguments);
+	setTimeout(function() { cb(null); } , timeout)
+}
 
-	// log("calling ssleep");
-	// var a = yield ssleep(500);
-	// log("returned from ssleep with", a);
+(function*() {
+	log("Waiting for gen");
+	yield y.gen(asyncSleep)(100);
 
-	// log("Yielding twice");
-	// a = ssleep(1000);
-	// log("Yielding first time", yield a);
-	// log("Yielding second time", yield a);
+	log("Waiting for gen on object");
+	var gened = y.gen({ a: asyncSleep, b: asyncSleep });
+	var res = yield [ gened.a(100), gened.b(200)];
+
+	log("calling ssleep");
+	var a = yield ssleep(500);
+	log("returned from ssleep with", a);
+
+	log("Yielding twice");
+	a = ssleep(1000);
+	log("Yielding first time", yield a);
+	log("Yielding second time", yield a);
 
 	log("Yielding twice concurrently");
 	a = ssleep(100);

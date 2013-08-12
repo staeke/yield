@@ -1,9 +1,9 @@
-# Preqrequisites.
+## Preqrequisites.
 - Install node js, minimum 0.11.2, i.e. experimental branch. NOTE: 0.10.x branch doesn't work yet.
 - Remember to run with "node --harmony"  !
 
 
-# Usage
+## Usage
 	(function*() {
 		// Here we run our async program
 	}).run();
@@ -26,7 +26,7 @@ You can "yield" all sort of stuff to make life easier, e.g.:
 		yield sleep(1000);
 	}).run();
 
-#### You can always write "return" instead of the last example
+#### You can always write "return" instead of yield as the last statement
 The above example then becomes
 
 	function* sleep(timeout) {

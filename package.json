@@ -1,0 +1,32 @@
+{
+  "name": "yield",
+  "version": "0.1.0",
+  "description": "Async execution of harmony generators",
+  "main": "yield.js",
+  "dependencies": {
+    "lodash": "~1.3.1"
+  },
+  "devDependencies": {
+    "jquery-deferred": "~0.3.0",
+  },
+  "scripts": {
+    "test": "node --harmony test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/staeke/yield.git"
+  },
+  "keywords": [
+    "yield",
+    "async",
+    "generators",
+    "harmony"
+  ],
+  "author": "Staffan Eketorp",
+  "license": "BSD",
+  "readmeFilename": "README.md",
+  "gitHead": "81f12715513d9e247628847788ec763f34008e99",
+  "bugs": {
+    "url": "https://github.com/staeke/yield/issues"
+  }
+}

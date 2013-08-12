@@ -12,13 +12,13 @@
 You can "yield" all sort of stuff to make life easier, e.g.:
 
 ### A normal async node function
-function* sleep1second() {
-	yield function(cb) { setTimeout(cb, 1000); } // Sleeps for one second
+function* sleep(timeout) {
+	yield function(cb) { setTimeout(function() { cb(null); } , timeout); }
 }
 
 ### Another generator
 function* sleep(timeout) {
-	yield function(cb) { setTimeout(cb, timeout); }
+	yield function(cb) { setTimeout(function() { cb(null); } , timeout); }
 }
 
 (function*() {
@@ -29,7 +29,7 @@ function* sleep(timeout) {
 The above example then becomes
 
 function* sleep(timeout) {
-	return function(cb) { setTimeout(cb, timeout); }
+	return function(cb) { setTimeout(function() { cb(null); } , timeout); }
 }
 
 (function*() {

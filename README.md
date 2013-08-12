@@ -36,6 +36,28 @@ The above example then becomes
 		return sleep(1000);
 	}).run();
 
+#### A converted object or function
+You can convert objects or functions by using the exported "gen" function. Note that when converting an object, "this scope" is preserved. It is not when you convert a single function. Also - conversions are shallow (just one level of functions) and return values are not converted. Thus - if you require a library which exports a class that you construct, by using 
+
+	var myClassInstance = new lib.MyClass();
+
+...then you also have to convert the myClassInstance to use generators, by using
+
+    var genMyClassinstance = require("yield").gen(myClassInstance);
+    
+Some more examples include:
+
+	var y = require("yield");
+	var lib = require("somelib")
+	var genlib = y.gen(lib);
+	var genObj = y.gen(new lib.SomeClass());
+	var genFunc = y.gen(lib.someFunction);
+
+	(function*() {
+		var x = yield genlib.someFunction(...);
+		var y = yield genObj.someInstanceFunction(...);
+		var z = yield genFunc(...);
+	}).run();
 
 #### A jQuery Deferred
 	// Shared scope

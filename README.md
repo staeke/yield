@@ -1,5 +1,6 @@
 # Preqrequisites.
 - Install node js, minimum 0.11.2, i.e. experimental branch. NOTE: 0.10.x branch doesn't work yet.
+- Remember to run with "node --harmony"  !
 
 
 # Usage

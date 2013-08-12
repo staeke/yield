@@ -1,57 +1,39 @@
-var _ = require("underscore");
-var util = require('util');
-var $ = require('jquery-deferred');
-var async = require("async");
+var _ = require("lodash");
 
-function* ssleep(timeout) {
-	return function(cb) {
-		console.log("Sleeping for", timeout);
-		setTimeout(function() {
-			console.log("Finished sleeping for", timeout);
-			cb(null, "timeout " + timeout + " completed");
-		}, timeout);
+var exp;
+module.exports = exp = {
+	gen: makeGenerators,
+	log: null 
+}
+
+var log = function() { exp.log && exp.log.apply(this, arguments); }
+
+// TODO: Handle deep objects and possibly return values
+function makeGenerators(objOrMethod, thisScope) {
+	if (_.isFunction(objOrMethod)) {
+		return function* () {
+			var args = arguments;
+			return function(cb) {
+				args.push(cb);
+				return objOrMethod.apply(thisScope, args);
+			}
+		}
+	}
+	else if (_.isObject(objOrMethod)) {
+		var copy = _.clone(objOrMethod);
+		_.each(_.functions(objOrMethod), function(fnName) {
+			copy[fnName] = makeGenerators(objOrMethod[fnName], objOrMethod)
+		});
+	}
+	else {
+		throw new Error("Unsupported type for conversion to generator. Only shallow objects and methods supported. Got", objOrMethod);
 	}
 }
 
-var log = console.log;
-
-
-
-function* someInner() {
-
-	// log("calling ssleep");
-	// var a = yield ssleep(500);
-	// log("returned from ssleep with", a);
-
-	// log("Yielding twice");
-	// a = ssleep(1000);
-	// log("Yielding first time", yield a);
-	// log("Yielding second time", yield a);
-
-	log("Yielding twice concurrently");
-	a = ssleep(100);
-	log("Concurrently 2 returned", yield [a,a])
-
-
-	a = ssleep(100);
-	var b = ssleep(200);
-	var rets = yield [a, b];
-	log("Parallel returned ", rets);
-
-	var ret = yield $.Deferred(function(deferred) { setTimeout(function() { deferred.resolve("ret") } , 500)} );
-	log("Deferred returned ", ret)
-
-	// //yield 0;
-	// //yield 1;
-	// //yield 2;
-	a = yield function(cb) { setTimeout(function() { cb(null, "!!VALUE!!")} , 500); }
-	log("Got", a, "back from yield");
-	log("start 200");
-	
-	return function(cb) { setTimeout(cb, 200); }
-}
-
 var Generator = Object.getPrototypeOf(function*() {});
+Generator.run = function(cb) {
+	runGeneratorAsAsync(this(), cb || Function.prototype);
+}
 function isGenerator(obj) {
 	return obj instanceof Generator;
 }
@@ -63,8 +45,6 @@ function isNodeStyleAsyncFunction(fn) {
 function isDeferred(obj) {
 	return obj && obj.then && obj.then instanceof Function;
 }
-
-// TODO: handle multiple yields of same iterator
 
 function* parallel() {
 	return asyncParallel(arguments);
@@ -189,27 +169,3 @@ function runItemAsAsync(item, cb) {
 		throw new Error("Unknown object yielded")
 	}
 }
-
-runGeneratorAsAsync(someInner(), function(err, res) {
-	log("Finished");
-});
-
-function* simplegen() {
-	log("first");
-	yield 0;
-	log("middle");
-	yield 1;
-	log("last");
-	return 3;
-}
-
-// var gen = simplegen(500);
-// log("generator started");
-// // //log(Object.prototype.toString.call(gen));
-// while(true) {
-// 	it = gen.next();
-// 	log("First", it);
-// 	if (it.done) break;
-// 	log(it.value);
-// }
-

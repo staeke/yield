@@ -1,7 +1,7 @@
-var y = require("./yield");
+var _y = require("./yield");
 var $ = require('jquery-deferred');
 
-y.log = console.log;
+_y.log = console.log;
 var log = console.log;
 
 function* ssleep(timeout) {
@@ -19,12 +19,38 @@ function asyncSleep(timeout, cb) {
 	setTimeout(function() { cb(null); } , timeout)
 }
 
+function thrower(msg, cb) {
+	cb(new Error(msg));
+}
+
+// TEST
+// 	- empty return in generator
+//  - errors in all scenarios
+
 (function*() {
-	log("Waiting for gen");
-	yield y.gen(asyncSleep)(100);
+
+	try {
+		var t = yield _y.gen(thrower)("Err 1");
+	} catch(e) {
+		log("Caught error", e.stack);
+	}
+
+	var t2 = yield _y.gen(thrower)("Err 2");
+
+	var x = ssleep(100).run();
+	var y = ssleep(200).run();
+	log ("Waiting");
+	yield y;
+	log ("y completed");
+	yield x;
+	log ("x completed")
+
+	log("Waiting for gen on functioncompleted");
+	yield x;
+	yield _y.gen(asyncSleep)(100);
 
 	log("Waiting for gen on object");
-	var gened = y.gen({ a: asyncSleep, b: asyncSleep });
+	var gened = _y.gen({ a: asyncSleep, b: asyncSleep });
 	var res = yield [ gened.a(100), gened.b(200)];
 
 	log("calling ssleep");
@@ -58,5 +84,5 @@ function asyncSleep(timeout, cb) {
 	
 	return function(cb) { setTimeout(cb, 200); }
 }).run(function(err, res) {
-	log("Finished");
+	log("Finished with", [err, res]);
 });

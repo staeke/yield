@@ -1,5 +1,6 @@
 var _ = require("lodash");
 
+
 var exp;
 module.exports = exp = {
 	gen: makeGenerators,
@@ -10,11 +11,15 @@ var log = function() { exp.log && exp.log.apply(this, arguments); }
 
 // TODO: Handle deep objects and possibly return values
 function makeGenerators(objOrMethod, thisScope) {
+	log("makeGenerators");
 	if (_.isFunction(objOrMethod)) {
-		return function* () {
+		log("Gen for function, returning generator")
+		return function*() {
 			var args = arguments;
+			log("gen generator called with", args);
 			return function(cb) {
 				args = _.toArray(args);
+				log("gen function called with", args);
 				args.push(cb);
 				return objOrMethod.apply(thisScope, args);
 			}
@@ -27,17 +32,23 @@ function makeGenerators(objOrMethod, thisScope) {
 		});
 		return copy;
 	}
-	else {
-		throw new Error("Unsupported type for conversion to generator. Only shallow objects and methods supported. Got", objOrMethod);
-	}
+
+	throw new Error("Unsupported object [" + objOrMethod + "] for conversion to generator. Only functions and function members of objects of type Object are supported. Received");
 }
 
-var Generator = Object.getPrototypeOf(function*() {});
-Generator.run = function(cb) {
-	runGeneratorAsAsync(this(), cb || Function.prototype);
-}
+var GeneratorFunction = Object.getPrototypeOf(function*() {});
+GeneratorFunction.run = function run(cb) {
+	runItemAsAsync(this(), cb || Function.prototype);
+	return this;
+};
+var GeneratorObject = Object.getPrototypeOf(Object.getPrototypeOf((function*(){})()));
+GeneratorObject.run = function run(cb) {
+	runItemAsAsync(this, cb || Function.prototype);
+	return this;
+};
+
 function isGenerator(obj) {
-	return obj instanceof Generator;
+	return obj instanceof GeneratorFunction;
 }
 
 function isNodeStyleAsyncFunction(fn) {
@@ -48,11 +59,7 @@ function isDeferred(obj) {
 	return obj && obj.then && obj.then instanceof Function;
 }
 
-function* parallel() {
-	return asyncParallel(arguments);
-}
-
-function asyncParallel(args) {
+function runParallel(args) {
 
 	log("Running in parallel", args);
 	return function(cb) {
@@ -81,42 +88,57 @@ function asyncParallel(args) {
 	}
 }
 
-function runGeneratorAsAsync(gen, cb, it, err, results /*...*/) {
+function runGeneratorAsAsync(genFunc, cb, genObj, err, results /*...*/) {
 
+	if (!genFunc.id) {
+		genFunc.id = _.uniqueId("gen");
+		log("Running", genFunc.id)
+	}
 	try {
-		if (it) {
+		if (genObj) {
 			if (err) {
-				//log("Error found in return value", err);
-				gen.throw(err);
-				return;
+				log("Error found in return value", err);
+				try {
+					genObj = genFunc.throw.apply(genFunc, [err]);
+				}
+				catch(e) {
+					log("Running callback error handler")
+					cb(e);
+					return;
+				}
 			}
 			else {
 				//log("send arguments", results);
-				//log("arguments", arguments);
-				it = gen.send.apply(gen, _.toArray(arguments).slice(4));
+				log("send")
+				genObj = genFunc.send.apply(genFunc, _.toArray(arguments).slice(4));
+				log("send completed")
 			}
 		}
 		else {
-			//log("calling next");
-	 		it = gen.next();
+			// Start generator function
+			log("starting generator ");
+	 		genObj = genFunc.next();
+			log("generator first sync block completed");
 	 	}
 	 	//log("next/send completed");
  	}
  	catch (e) {
- 		gen.throw(e);
+ 		log("Error received", e.stack);
+ 		log("Throwing back into", genFunc);
+ 		genFunc.throw(e);
  		return;
  	}
 	
-	if (!it.done) {
-		cb = _.bind(runGeneratorAsAsync, null, gen, cb, it)
+	if (!genObj.done) {
+		cb = _.bind(runGeneratorAsAsync, null, genFunc, cb, genObj)
 	}
-	else if (!it.value) {
+	else if (!genObj.value) {
 		// log("Exiting finished gen");
 		cb();
 		return;
 	}
 
-	runItemAsAsync(it.value, cb);
+	runItemAsAsync(genObj.value, cb);
 }
 
 function runItemAsAsync(item, cb) {
@@ -163,7 +185,7 @@ function runItemAsAsync(item, cb) {
 		});
 	}
 	else if (_.isArray(item)) {
-		asyncParallel(item)(cb);
+		runParallel(item)(cb);
 	}
 	else {
 		log(Object.prototype.toString.call(item));

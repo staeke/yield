@@ -128,3 +128,23 @@ function* getTodos() {
 	return lazyTodos();
 }
 ```
+
+#### Start something without waiting directly for it
+
+``` javascript
+// See fetchUrl in example above
+
+
+function* getTodos() {
+	// By calling "run" on the iterator, we fire it off directly. Here we fetch both todos and emails
+	var todos = fetchUrl("/todos").run();
+	var email = fetchUrl("/todos").run();
+
+	// Finally wait for todos and e-mails. If we hadn't called next above, these calls would "kick it all off"
+	var todosResult = yield todosWithExtra;
+	var emailsResult = yield emailsWithExtra;
+
+	// Do something with todos here...
+}
+
+```

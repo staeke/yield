@@ -1,6 +1,12 @@
 var _y = require("./yield");
 var $ = require('jquery-deferred');
 
+var runner = require("qunit");
+runner.run({
+    code : "./yield.js",
+    tests : "./tests/main.js"
+});
+
 _y.log = console.log;
 var log = console.log;
 
@@ -28,6 +34,17 @@ function thrower(msg, cb) {
 //  - errors in all scenarios
 
 (function*() {
+
+	(function*() {
+	    var a = yield ssleep(100)
+	    console.log("inner finished", a);
+	}).run();
+	return;
+
+	console.log("Map parallel wait")
+	yield _([1000,2000,3000]).map(function*(timeout) {
+		yield ssleep(timeout);
+	});
 
 	try {
 		var t = yield _y.gen(thrower)("Err 1");
@@ -83,6 +100,7 @@ function thrower(msg, cb) {
 	log("start 200");
 	
 	return function(cb) { setTimeout(cb, 200); }
-}).run(function(err, res) {
-	log("Finished with", [err, res]);
-});
+})
+// .run(function(err, res) {
+// 	log("Finished with", [err, res]);
+// });

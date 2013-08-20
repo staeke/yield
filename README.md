@@ -81,19 +81,17 @@ var myClassInstance = new lib.MyClass();
 var genMyClassinstance = require("yield").gen(myClassInstance);
 ```
 
-#### A jQuery Deferred
+#### A jQuery Deferred (this specific code only runs in browsers)
 ``` javascript
-// Shared scope
-var deferred = $.Deferred();
-
-// Some other code
-function onSomeEvent(res) {
-	deferred.resolve(res)
-}
-
-// Our generator async program
 (function*() {
-	var res = yield deferred;
+	try {
+		var newTodos = yield $.getJSON("/todos/new");
+		alert(newTodos.length + " new todos found.");
+	}
+	catch(e) {
+		console.error(e.stack);
+	}
+}
 }).run();
 ```
 
@@ -139,6 +137,38 @@ function* getTodos() {
 	// By calling "run" on the iterator, we fire it off directly. Here we fetch both todos and emails
 	var todos = fetchUrl("/todos").run();
 	var email = fetchUrl("/todos").run();
+
+	// Finally wait for todos and e-mails. If we hadn't called next above, these calls would "kick it all off"
+	var todosResult = yield todosWithExtra;
+	var emailsResult = yield emailsWithExtra;
+
+	// Do something with todos here...
+}
+
+```
+
+#### Using lo-dash (underscore) functional paradigms
+
+``` javascript
+// See fetchUrl in example above
+
+
+function* getTodos() {
+	// By calling "next" on the iterator, we fire it off directly. Here we fetch both todos and emails
+	var todos = fetchUrl("/todos").next();
+	var email = fetchUrl("/todos").next();
+
+	// Set up a handler "in the future". This will be called once todos has arrived
+	var todosWithExtra = _(todos).map(function*(todo) {
+		var extra = yield fetchUrl("/todos/" + todo.id + "/extra")
+		return _(todo).extend(extra);
+	});
+
+	// Set up a handler "in the future". This will be called once emails has arrived
+	var emailsWithExtra = _(todos).map(function*(email) {
+		var extra = yield fetchUrl("/emails/" + todo.id + "/extra")
+		return _(email).extend(extra);
+	});
 
 	// Finally wait for todos and e-mails. If we hadn't called next above, these calls would "kick it all off"
 	var todosResult = yield todosWithExtra;

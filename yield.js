@@ -61,7 +61,7 @@ module.exports = exp = {
 };
 var log = function() { exp.log && exp.log.apply(this, arguments); }
 
-function getDeferred() {
+function getPromise() {
 	// Handle both Q deferreds and jQuery deferreds
 	if(Q && Q.defer) {
 		var deferred = new Q.defer();
@@ -82,21 +82,20 @@ GeneratorFunction.run = function run(cb) {
 };
 var GeneratorObject = Object.getPrototypeOf(Object.getPrototypeOf(emptyGenFunc()));
 GeneratorObject.run = function run(cb) {
-	var deferred = getDeferred();
+	var deferreds = getPromise();
 	runGeneratorAsAsync(this, function(err, result) {
-		console.log("Generator returned", arguments);
 		if (cb) { cb(err, result) };
 		if (err) {
-		 	if (deferred) deferred[0].reject(err);
+		 	if (deferreds) deferreds[0].reject(err);
 		}
 		else {
-			if (deferred) deferred[0].resolve(result);
+			if (deferreds) deferreds[0].resolve(result);
 		}
 	});
-	return deferred && deferred[1];
+	return deferreds && deferreds[1];
 };
 
-// Needed in node 0.11.2
+// Compatibility fix - needed in node 0.11.2
 if (GeneratorObject.send) {
 	var oldNext = GeneratorObject.next;
 	GeneratorObject.next = function() {
@@ -168,7 +167,7 @@ function isNodeStyleAsyncFunction(fn) {
 	return _.isFunction(fn) && fn.length === 1;
 }
 
-function isDeferred(obj) {
+function isPromise(obj) {
 	return obj && obj.then && obj.then instanceof Function;
 }
 
@@ -207,34 +206,24 @@ function runParallel(args) {
 					}
 				}
 			};
-			log("Running parallel item as async", args[i]);
 			runItemAsAsync(args[i], funnel);
 		}
 	}
 }
 
 function runGeneratorAsAsync(genFunc, cb, genObj, err, result) {
-
-	// TODO: Stop usinng bind, remove err/result parameter
-	
 	try {
 		if (err) {
-			log("Error found in return value", err);
 			genObj = genFunc.throw.apply(genFunc, [err]);
 		}
 		else {
-			// Start generator function
-			log("starting generator ");
  			genObj = genFunc.next(result);
-			log("generator first sync block completed");
 	 	}
  	}
 	catch(e) {
-		log("Running callback error handler")
-		cb(e);
-		return;
+		return cb(e);
 	}
-	
+
 	if (!genObj.done) {
 		var finishedCb = cb;
 		cb = function(err, result) {
@@ -242,7 +231,6 @@ function runGeneratorAsAsync(genFunc, cb, genObj, err, result) {
 		}
 	}
 	else if (!genObj.value) {
-		// log("Exiting finished gen");
 		return cb();
 	}
 
@@ -251,41 +239,38 @@ function runGeneratorAsAsync(genFunc, cb, genObj, err, result) {
 
 function runItemAsAsync(item, cb) {
 	if (isGeneratorObject(item)) {
-		log("running generator");
 		if (item.__returnArguments) {
-			log("found generator finished with", item.__returnArguments);
+			log("Using cached return value of already completed generator", item.__returnArguments);
 			cb.apply(this, item.__returnArguments);
 		}
 		else if (item.__completions) {
-			log("found generator has started, waiting");
+			log("Waiting for already started generator");
 			item.__completions.push(cb);
 		}
 		else {
-			log("item not started, starting");
+			log("Starting yielded generator");
 			item.__completions = [];
 			runGeneratorAsAsync(item, function(err, result) {
-				// log(new Error().stack)
-				// log("finished running generator", [err, result])
 				item.__returnArguments = arguments;
 				cb.apply(this, arguments);
 				_(item.__completions).each(function(f){ 
-					log("Running subscriber");
+					log("Completing wait for generator with", item.__returnArguments);
 					f.apply(this, item.__returnArguments); 
 				})
 			});
 		}
 	} 
 	else if (isNodeStyleAsyncFunction(item)) {
-		//log("Starting async function", item)
+    log("Running yielded node style async function");
 		item (function(err, result) {
 			if (arguments.length > 2) {
 				result = _.toArray(arguments).slice(1);
 			}
-			cb.apply(this, arguments);
+			cb(err, result);
 		});
 	}
-	else if (isDeferred(item)) { //TODO: Rename Deferred to promise
-		log("running deferred")
+	else if (isPromise(item)) {
+    log("Running promise");
 		item.then(function(result) {
 			if (arguments.length > 1) {
 				result = _.toArray(arguments);
@@ -296,11 +281,13 @@ function runItemAsAsync(item, cb) {
 		});
 	}
 	else if (_.isArray(item)) {
+    log("Running parallel array");
 		runParallel(item)(cb);
 	}
 	// TODO: Support .success/.error style
 	// TODO: Support GeneratorFunction
 	else {
+    log("Unsupported yield type for object", item);
 		var type = Object.prototype.toString.call(item);
 		throw new Error("Value yielded or returned from generator that is not asynchronously runnable: " + type);
 	}

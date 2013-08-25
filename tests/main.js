@@ -1,6 +1,7 @@
 var y = require("../yield");
 var $ = require("jquery-deferred");
 
+// Setup logging
 y.log = function() {
 	if (arguments.length === 0) {
 		console.log();
@@ -22,6 +23,7 @@ y.log = function() {
 	}
 };
 
+// Utility function used in testing
 var runCount = 0;
 function* sleep(timeout) {
 	return function(cb) {

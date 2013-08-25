@@ -177,37 +177,26 @@ function runGeneratorAsAsync(genFunc, cb, genObj, err, results /*...*/) {
 		genFunc.id = _.uniqueId("gen");
 		log("Running", genFunc.id, genFunc)
 	}
-	if (genObj) {
-		if (err) {
-			log("Error found in return value", err);
-			try {
-				genObj = genFunc.throw.apply(genFunc, [err]);
-			}
-			catch(e) {
-				log("Running callback error handler")
-				cb(e);
-				return;
-			}
+	if (err) {
+		log("Error found in return value", err);
+		try {
+			genObj = genFunc.throw.apply(genFunc, [err]);
 		}
-		else {
-			//log("send arguments", results);
-			log("send back")
-			try {
-				genObj = genFunc.next.apply(genFunc, _.toArray(arguments).slice(4));
-			}
-			catch(e) {
-				log("Running callback error handler 2")
-				cb(e);
-				return;
-			}
-			log("send completed")
+		catch(e) {
+			log("Running callback error handler")
+			cb(e);
+			return;
 		}
 	}
 	else {
 		// Start generator function
 		log("starting generator ");
+		var args = results;
+		if (arguments.length > 5) {
+			args = _.toArray(arguments).slice(4)
+		}
 		try {	
- 			genObj = genFunc.next();
+ 			genObj = genFunc.next(args);
 			log("generator first sync block completed");
 		}
 		catch(e) {

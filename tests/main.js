@@ -190,7 +190,6 @@ asyncTest("Parallel wait for errors should result in error array", function*() {
 	}
 });
 
-
 asyncTest("Ðeferred promise chaining", function() {
 	(function*() { return function(cb) { cb(null, "res"); } })
 		.run()

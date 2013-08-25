@@ -1,3 +1,9 @@
+if (typeof(module) === "undefined") { module = {}; }
+if (typeof(window) === "undefined") { window = {}; }
+
+window.y = (function() {
+
+var jQueryDeferred = typeof(window.jQuery) != "undefined" && window.jQuery.Deferred;
 if (typeof(require) === "function") {
 	// Node or requirejs
 	var _ = require("lodash");
@@ -5,19 +11,23 @@ if (typeof(require) === "function") {
 }
 else {
 	// Browser, verify dependencies
-	if (typeof(_) === "undefined") {
-		console.error("Lo-dash.js or underscore.js not found. Please include that dependency on your page.");
+	if (typeof(window._) === "undefined") {
+		console.error("lodash.js or underscore.js not found. Please include either script dependency on your page.");
+	}
+	else {
+		var _ = window._;
 	}
 }
 
 var exp;
-if (typeof(module) == "undefined") { module = {}; }
+
 module.exports = exp = {
 	gen: makeGenerators,
 	log: null,
 	isGeneratorFunction: isGeneratorFunction,
-	isGeneratorObject: isGeneratorObject
+	isGeneratorObject: isGeneratorObject,
 	AggregateError: AggregateError,
+	noConflict: typeof(y) !== "undefined" && y
 };
 
 function getDeferred() {
@@ -26,8 +36,8 @@ function getDeferred() {
 		var deferred = new Q.defer();
 		return [deferred, deferred.promise];
 	}
-	else if(jQuery && jQuery.Deferred) {
-		var deferred = new jQuery.Deferred();
+	else if(jQueryDeferred) {
+		var deferred = new jQueryDeferred();
 		return [deferred, deferred];
 	}
 	
@@ -43,7 +53,7 @@ var GeneratorObject = Object.getPrototypeOf(Object.getPrototypeOf(emptyGenFunc()
 GeneratorObject.run = function run(cb) {
 	var deferred = getDeferred();
 	runGeneratorAsAsync(this, function(err, result) {
-		console.log("returned", arguments);
+		console.log("Generator returned", arguments);
 		if (cb) { cb(err, result) };
 		if (err) {
 		 	if (deferred) deferred[0].reject(err);
@@ -142,7 +152,6 @@ AggregateError.prototype = Error.prototype;
 
 function runParallel(args) {
 
-	log("Running in parallel", args);
 	return function(cb) {
 		var left = args.length;
 		errors = [];
@@ -263,8 +272,9 @@ function runItemAsAsync(item, cb) {
 	// TODO: Support .success/.error style
 	// TODO: Support GeneratorFunction
 	else {
-		console.log("item", item);
 		var type = Object.prototype.toString.call(item);
 		throw new Error("Value yielded or returned from generator that is not asynchronously runnable: " + type);
 	}
 }
+return exp;
+})();

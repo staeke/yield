@@ -1,47 +1,61 @@
-if (typeof(_) === "undefined") {
-	_ = require("lodash");
+if (typeof(require) === "function") {
+	// Node or requirejs
+	var _ = require("lodash");
+	try { var Q = require("q"); } catch(e) {}
+}
+else {
+	// Browser, verify dependencies
+	if (typeof(_) === "undefined") {
+		console.error("Lo-dash.js or underscore.js not found. Please include that dependency on your page.");
+	}
 }
 
 var exp;
-if (typeof(module) == "undefined") { module = {}; } 
+if (typeof(module) == "undefined") { module = {}; }
 module.exports = exp = {
 	gen: makeGenerators,
 	log: null,
 	isGeneratorFunction: isGeneratorFunction,
 	isGeneratorObject: isGeneratorObject
+};
+
+function getDeferred() {
+	// Handle both Q deferreds and jQuery deferreds
+	var deferred;
+	if(Q && Q.defer) {
+		deferred = new Q.defer();
+		return [deferred, deferred.promise];
+	}
+	else if(jQuery && jQuery.Deferred) {
+		deferred = new jQuery.Deferred();
+		return [deferred, deferred];
+	}
+	
+	return deferred;
 }
 
-
-
-var GeneratorFunction = Object.getPrototypeOf(function*() {});
+var emptyGenFunc = function*() { yield null; };
+var GeneratorFunction = Object.getPrototypeOf(emptyGenFunc);
 GeneratorFunction.run = function run(cb) {
-	runItemAsAsync(this(), cb || Function.prototype);
-	return this;
+	return this().run(cb);
 };
-var GeneratorObject = Object.getPrototypeOf(Object.getPrototypeOf((function*(){})()));
+var GeneratorObject = Object.getPrototypeOf(Object.getPrototypeOf(emptyGenFunc()));
 GeneratorObject.run = function run(cb) {
-	runItemAsAsync(this, cb || Function.prototype);
-	return this;
+	var deferred = getDeferred();
+	runGeneratorAsAsync(this, function(err, result) {
+		console.log("returned", arguments);
+		if (cb) { cb(err, result) };
+		if (err) {
+		 	if (deferred) deferred[0].reject(err);
+		}
+		else {
+			if (deferred) deferred[0].resolve(result);
+		}
+	});
+	return deferred && deferred[1];
 };
 
 // Needed in node 0.11.2
-
-
-var _filter = _.filter;
-var _reject = _.reject;
-var _map = _.map;
-var _forEach = _.forEach;
-var _invoke = _.invoke;
-var _every = _.every;
-var _some = _.some;
-
-function* ssleep(timeout) {
-	return function(cb) {
-		console.log("Sleeping for", timeout);
-		setTimeout(function() {
-			console.log("Finished sleeping for", timeout);
-			cb(null, "timeout " + timeout + " completed");
-		}, timeout);
 if (GeneratorObject.send) {
 	var oldNext = GeneratorObject.next;
 	GeneratorObject.next = function() {
@@ -51,27 +65,37 @@ if (GeneratorObject.send) {
 	};
 }
 
+// Lo-dash/underscore extensions
+if (_) {
+	var _filter = _.filter;
+	var _reject = _.reject;
+	var _map = _.map;
+	var _forEach = _.forEach;
+	var _invoke = _.invoke;
+	var _every = _.every;
+	var _some = _.some;
 
-function genMap(collection, generatorCallback, thisArg) {
-	if (!isGeneratorFunction(generatorCallback)) {
-		return _map.apply(this, arguments);
-	}
-	// Wait for collection
-	// For each item in collection
-	return _map(collection, function(item) {
-		return generatorCallback(item);
+	var genMap = function(collection, generatorCallback, thisArg) {
+		if (!isGeneratorFunction(generatorCallback)) {
+			return _map.apply(this, arguments);
+		}
+		// Wait for collection
+		// For each item in collection
+		return _map(collection, function(item) {
+			return generatorCallback(item);
+		});
+	};
+
+	_.mixin({
+		"toGenerators": makeGenerators,
+		"map": genMap
 	});
 }
 
-_.mixin({
-	"toGenerators": makeGenerators,
-	"map": genMap
-});
-
 //var log = function() { exp.log && exp.log.apply(this, arguments); }
-var log = function() { 
-	if (arguments.length == 0) {
-		console.log()
+var log = function() {
+	if (arguments.length === 0) {
+		console.log();
 	}
 	else if (arguments.length == 1) {
 		console.log(arguments[0]);
@@ -84,14 +108,14 @@ var log = function() {
 	}
 	else if (arguments.length == 4) {
 		console.log(arguments[0], arguments[1], arguments[2], arguments[3]);
-	}	
-}
+	}
+};
 
 // TODO: Handle deep objects and possibly return values
 function makeGenerators(objOrMethod, thisScope) {
 	log("makeGenerators");
 	if (_.isFunction(objOrMethod)) {
-		log("Gen for function, returning generator")
+		log("Gen for function, returning generator");
 		return function*() {
 			var args = arguments;
 			log("gen generator called with", args);
@@ -100,13 +124,13 @@ function makeGenerators(objOrMethod, thisScope) {
 				log("gen function called with", args);
 				args.push(cb);
 				return objOrMethod.apply(thisScope, args);
-			}
-		}
+			};
+		};
 	}
 	else if (_.isObject(objOrMethod)) {
 		var copy = _.clone(objOrMethod);
 		_.each(_.functions(objOrMethod), function(fnName) {
-			copy[fnName] = makeGenerators(objOrMethod[fnName], objOrMethod)
+			copy[fnName] = makeGenerators(objOrMethod[fnName], objOrMethod);
 		});
 		return copy;
 	}
@@ -234,16 +258,19 @@ function runItemAsAsync(item, cb) {
 	else if (isNodeStyleAsyncFunction(item)) {
 		//log("Starting async function", item)
 		item (function(err, result) {
-			// log("Return from  async function", arguments, "done", it.done)
+			if (arguments.length > 2) {
+				result = _.toArray(arguments).slice(1);
+			}
 			cb.apply(this, arguments);
 		});
 	}
-	else if (isDeferred(item)) {
+	else if (isDeferred(item)) { //TODO: Rename Deferred to promise
 		log("running deferred")
 		item.then(function(result) {
-			var newArguments = Array.prototype.unshift.call(arguments, null);
-			// log("newArguments", newArguments)
-			cb.apply(this, arguments);
+			if (arguments.length > 1) {
+				result = _.toArray(arguments);
+			}
+			cb(null, result);
 		}, function(e) {
 			cb(e);
 		});
@@ -251,9 +278,11 @@ function runItemAsAsync(item, cb) {
 	else if (_.isArray(item)) {
 		runParallel(item)(cb);
 	}
+	// TODO: Support .success/.error style
+	// TODO: Support GeneratorFunction
 	else {
-		log(Object.prototype.toString.call(item));
-		log(Object.getPrototypeOf(item));
-		throw new Error("Unknown object yielded")
+		console.log("item", item);
+		var type = Object.prototype.toString.call(item);
+		throw new Error("Value yielded or returned from generator that is not asynchronously runnable: " + type);
 	}
 }

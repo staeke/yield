@@ -10,6 +10,9 @@
     "jquery-deferred": "~0.3.0",
     "qunit": "~0.5.16"
   },
+  "optionalDependencies": {
+    "q": "~0.9.6"
+  },
   "scripts": {
     "test": "node --harmony test.js"
   },

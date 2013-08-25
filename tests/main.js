@@ -122,12 +122,24 @@ asyncTest("Make sure we get ReferenceError in callback to generator", function*(
 	});
 });
 
-asyncTest("Multiple results", function*(){
+asyncTest("Multiple results from async function", function*(){
 	var a = yield function(cb) {
 		cb(null, 1, 2);
 	};
 	ok(a instanceof Array, "a instanceof Array");
 	equal(a.length, 2, "length === 2")
+	equal(a[0], 1);
+	equal(a[1], 2); 
+});
+
+asyncTest("Multiple results from deferred", function*(){
+	var a = yield $.Deferred(function(d) {
+		d.resolve(1, 2);
+	});
+	ok(a instanceof Array, "a instanceof Array");
+	equal(a.length, 2, "length === 2")
+	equal(a[0], 1);
+	equal(a[1], 2); 
 });
 
 asyncTest("Undefined variable use should result in ReferenceError in Deferred", function*() {
@@ -155,3 +167,13 @@ asyncTest("Parallel wait for errors should result in error array", function*() {
 		start();
 	}
 });
+
+
+asyncTest("Ðeferred promise chaining", function() {
+	(function*() { return function(cb) { cb(null, "res"); } })
+		.run()
+		.then(function(res) {
+			equal(res, "res");
+			start();
+		});
+})

@@ -169,50 +169,37 @@ function runParallel(args) {
 	}
 }
 
-function runGeneratorAsAsync(genFunc, cb, genObj, err, results /*...*/) {
+function runGeneratorAsAsync(genFunc, cb, genObj, err, result) {
 
-	// TODO: Stop usinng bind, unite next calls, remove err/results parameter
+	// TODO: Stop usinng bind, remove err/result parameter
 	
-	if (!genFunc.id) {
-		genFunc.id = _.uniqueId("gen");
-		log("Running", genFunc.id, genFunc)
-	}
-	if (err) {
-		log("Error found in return value", err);
-		try {
+	try {
+		if (err) {
+			log("Error found in return value", err);
 			genObj = genFunc.throw.apply(genFunc, [err]);
 		}
-		catch(e) {
-			log("Running callback error handler")
-			cb(e);
-			return;
-		}
-	}
-	else {
-		// Start generator function
-		log("starting generator ");
-		var args = results;
-		if (arguments.length > 5) {
-			args = _.toArray(arguments).slice(4)
-		}
-		try {	
- 			genObj = genFunc.next(args);
+		else {
+			// Start generator function
+			log("starting generator ");
+ 			genObj = genFunc.next(result);
 			log("generator first sync block completed");
-		}
-		catch(e) {
-			log("Running callback error handler 2")
-			cb(e);
-			return;
-		}
+	 	}
  	}
+	catch(e) {
+		log("Running callback error handler")
+		cb(e);
+		return;
+	}
 	
 	if (!genObj.done) {
-		cb = _.bind(runGeneratorAsAsync, null, genFunc, cb, genObj)
+		var finishedCb = cb;
+		cb = function(err, result) {
+			runGeneratorAsAsync(genFunc, finishedCb, genObj, err, result);
+		}
 	}
 	else if (!genObj.value) {
 		// log("Exiting finished gen");
-		cb();
-		return;
+		return cb();
 	}
 
 	runItemAsAsync(genObj.value, cb);

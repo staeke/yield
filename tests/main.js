@@ -184,6 +184,7 @@ asyncTest("Parallel wait for errors should result in error array", function*() {
 	catch(e) {
 		ok(true, "Exception thrown");
 		ok(e instanceof Error, "e instanceof Error");
+		ok(e instanceof y.AggregateError, "e instanceof AggregateError");
 		equal(e.errors.length, 2, "length === 2");
 		start();
 	}

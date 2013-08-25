@@ -17,6 +17,7 @@ module.exports = exp = {
 	log: null,
 	isGeneratorFunction: isGeneratorFunction,
 	isGeneratorObject: isGeneratorObject
+	AggregateError: AggregateError,
 };
 
 function getDeferred() {
@@ -132,9 +133,12 @@ function isDeferred(obj) {
 	return obj && obj.then && obj.then instanceof Function;
 }
 
-function AggregateError() {
-
+function AggregateError(errors) {
+	this.message = "Multiple errors captured in parallel run. See the errors property";
+	this.errors = errors;
+	this.stack = _(errors).pick("stack").join("\n\n");
 }
+AggregateError.prototype = Error.prototype;
 
 function runParallel(args) {
 
@@ -155,10 +159,7 @@ function runParallel(args) {
 						cb(errors[0]);
 					}
 					if (errors.length > 0) {
-						var error = new Error("Multiple errors captured in parallel run. See the errors property");
-						error.errors = errors;
-						error.stack = _(errors).pick("stack").join("\n\n");
-						cb(error);
+						cb(new AggregateError(errors));
 					}
 					else {
 						cb(null, results);

@@ -1,17 +1,17 @@
 {
   "name": "yield",
-  "version": "0.1.0",
+  "version": "0.9.0",
   "description": "Asynchronous coding using ECMAScript 6 generators",
   "main": "yield.js",
   "dependencies": {
-    "lodash": "~1.3.1"
+    "lodash": "1.3.x"
   },
   "devDependencies": {
-    "jquery-deferred": "~0.3.0",
-    "qunit": "~0.5.16"
+    "jquery-deferred": ">=0.3.0",
+    "qunit": ">=0.5.16"
   },
   "optionalDependencies": {
-    "q": "~0.9.6"
+    "q": "0.9.x"
   },
   "scripts": {
     "test": "node --harmony test.js"
@@ -21,16 +21,18 @@
     "url": "git://github.com/staeke/yield.git"
   },
   "keywords": [
+	  "harmony",
+	  "async",
     "yield",
-    "async",
+		"yyield",
+		"y",
     "asynchronous",
     "generators",
     "ecmascript",
-    "harmony",
     "lodash",
     "underscore"
   ],
-  "author": "Staffan Eketorp",
+  "author": "Staffan Eketorp <staffan.eketorp@gmail.com> (http://staeke.wordpress.com/)",
   "license": "BSD",
   "bugs": {
     "url": "https://github.com/staeke/yield/issues"

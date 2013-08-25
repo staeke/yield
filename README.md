@@ -164,7 +164,7 @@ function* getTodos() {
 		return _(todo).extend(extra);
 	});
 
-	// Set up a handler "in the future". This will be called once emails has arrived
+	// Set up a handler "in the future". This will be called once email has arrived
 	var emailsWithExtra = _(todos).map(function*(email) {
 		var extra = yield fetchUrl("/emails/" + todo.id + "/extra")
 		return _(email).extend(extra);

@@ -299,8 +299,6 @@ function runItemAsAsync(item, cb) {
 		eFunc(cb);
 		item.success(function(result) { cb(null, result); })
 	}
-	// TODO: Support .success/.error style
-	// TODO: Support GeneratorFunction
 	else {
 		log("Unsupported yield type for object", item);
 		var type = Object.prototype.toString.call(item);

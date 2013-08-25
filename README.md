@@ -1,6 +1,61 @@
+# Y-yield
+Y-yield is a way to get back to the wonderful land of reliable exceptions and easy to follow asynchronous code using Javascript. Any caveats? Well, it requires the use of upcoming standard ECMAScript 6, so it's anything but mainstream at the moment. However, chances are that the standard is going to be approved during 2013 and then it will only be a matter of time before all browsers (ehm..) have implemented the feature. The new standard gives us syntactical goodies such as "function*" and "yield". But, you may ask yourself, what does it provide? Why yield?
+
+#### The basic idea
+ECMAScript 6 introduces something called generators. They look like this:
+``` javascript
+function* myGenerator() {
+	yield "SomeValue";
+	yield "SomeOtherValue";
+}
+
+var a = myGenerator();
+var value = a.next(); // first line in myGenerator executes, returns "SomeValue"
+var otherValue = a.next(); // second line in myGenerator executes, returns "SomeValue"
+```
+Ok...that looks pretty much like Python/Scala/C#/whatever. What does that bring in terms of asynchronous code? Well, the idea is that if we can write our code as a generator generating different asynchronous pieces of code, we can use the built-in wrapping/unwrapping of function bodies and try/catch statements to make our life easier. We could write something like
+
+``` javascript
+function* fetchUrl() {
+    ...
+}
+
+function* getTodos(extra) {
+	try {
+        var todosTask = fetchUrl("/todos")
+        var emailTask = fetchUrl("/todos")
+
+        // Wait for the two parallel tasks to finish
+        var todosAndEmail = yield [todosTask, emailTask];
+        console.log("All fetched", todos, email)
+	}
+	catch (e) {
+	    console.error("Oops...something went wrong", e);
+	}
+}
+```
+Note that the generators return objects that we have to "yield" to see the result for. If you get that, you get what it's about.
+
+
+And to just make the "why yield" answer a little clearer:
+- We can use try/catch again. You've read the posts about avoiding those pesky keywords in asynchronous code (i.e. all code) you can't rely on them being called. But hey, remember that convenient idea of wrapping a bunch of calls in try/catch and handling a lot of different errors in a grouped way for a piece of code. Perhaps being able to send an error back or outputting to some log. Sure, there are solutions in old callback land such as [node domains](http://nodejs.org/api/domain.html), load balancing workers, and it may be a good idea to die rather than to do stupid things. But, being pragmatic, it's pretty nifty to be able to actually catch all errors within a block of code and decide for yourself.
+- Ever felt a little bad about cluttering your objects, parameters and classes with callbacks here and there. Get ready for cleaner code.
+- Ever written some asynchronous code and made a mistake in the error handler? Maybe you forgot to add one? Maybe your colleague did? Maybe you typed it incorrectly and now your application has just not returned from a call in quite some time. Console is just blank. :(
+- There are all kind of libraries to make asynchronous coding easier. Among the most popular are [async](https://github.com/caolan/async) in node, [jQuery Deferred](http://api.jquery.com/category/deferred-object/) and [Q](https://github.com/kriskowal/q). But there are oh so many ways different libraries handle this. jQuery use its own deferreds and node uses the passing of a function with one callback function. [Sequalize](http://sequelizejs.com/), a MySQL ORM, uses a notion of chaining success and error callbacks. And still other libraries use an option parameter with a success/error callback. For anyone coding javascript, especially in node, it's evident that these conversions take time, are error prone and leave an uneasy feeling of possibly missing something. And even if we don't consider errors, it's often pretty darn hard to follow what's happening, especially if there's a bit of conditional asynchronous extra calls.
+- Asyncronous stack traces? It is pretty saddening to just see that EventEmitter in your stack trace, right? With that said, there are node packages to make it easier such as [trycatch](https://github.com/CrabDude/trycatch).
+- ECMAScript is in a way catching up with this. Async handling has been major recent lanaguage features in languages such as C#, F#, Scala,
+
 ## Preqrequisites.
-- Install node js, minimum 0.11.2, i.e. experimental branch. NOTE: 0.10.x branch doesn't work yet.
+### For node
+- Install node js, minimum 0.11.2, but preferred 0.11.4, i.e. experimental branch. NOTE: 0.10.x branch does NOT work yet.
 - Remember to run with "node --harmony"  !
+
+### In Chrome
+- Install Chrome canary from https://www.google.com/intl/en/chrome/browser/canary.html
+- In Chrome canary, go to the address chrome://flags/. Find "Enable Experimental JavaScript" and click "Enable" for that feature. Restart Chrome.
+
+## What about IE/Firefox/Opera/Safari/PhantomJS/etc?
+I will add supprt and tests as those browsers support generators. They currently don't.
 
 
 ## Usage
@@ -80,8 +135,13 @@ var myClassInstance = new lib.MyClass();
 ``` javascript
 var genMyClassinstance = require("yield").gen(myClassInstance);
 ```
+#### The Y-yield generators work fine with promises such as Q.defer and jQuery.Deferred
+By using promises based asynchornous flows, you are able to chain calls with multiple calls to .then() in e.g. Q or jQuery. You can mix this with calls to done/fail to create way to accomplish asynchronous data flows. 
 
-#### A jQuery Deferred (this specific code only runs in browsers)
+Read more about Q at https://github.com/kriskowal/q
+Read more about jQuery deferreds at http://api.jquery.com/jQuery.Deferred/
+
+Here's an example using jQuery Deferred (namely the quite common return object form $.ajax/getJSON)
 ``` javascript
 (function*() {
 	try {
@@ -93,6 +153,18 @@ var genMyClassinstance = require("yield").gen(myClassInstance);
 	}
 }
 }).run();
+```
+
+Y also integrates with these by returning promises from the run method. Note that promises are only returned if you're running in node or requirejs (by using Q) or if you're running in a browser and jQuery exists. Y-yield does not require that Q or jQuery are installed and will work fine without them - only run will not return anything. Here's an example where we use Y-yield to chain on a then function:
+``` javascript
+// See fetchUrl in example above
+
+(function* () {
+	return fetchUrl("/todos");
+}).run()
+  .then(function(err, result) {
+  	console.log("Here are the todos", result)
+  });
 ```
 
 #### An array of something that is yieldable according to above
@@ -136,13 +208,13 @@ function* getTodos() {
 function* getTodos() {
 	// By calling "run" on the iterator, we fire it off directly. Here we fetch both todos and emails
 	var todos = fetchUrl("/todos").run();
-	var email = fetchUrl("/todos").run();
+	var emails = fetchUrl("/emails").run();
 
 	// Finally wait for todos and e-mails. If we hadn't called next above, these calls would "kick it all off"
-	var todosResult = yield todosWithExtra;
-	var emailsResult = yield emailsWithExtra;
+	var todosResult = yield todos;
+	var emailsResult = yield emails;
 
-	// Do something with todos here...
+	// Do something with todos and emails here...
 }
 
 ```
@@ -179,20 +251,3 @@ function* getTodos() {
 
 ```
 
-#### The yield generators work fine with promises such as Q.defer and jQuery.Deferred
-
-By using promises based asynchornous flows, you are able to chain calls with multiple calls to .then() in e.g. Q or jQuery. You can mix this with calls to done/fail to create way to accomplish asynchronous data flows. Yield integrates with these by returning promises from the run method. Note that promises are only returned if you're running in node or requirejs (by using Q) or if you're running in a browser and jQuery exists. Yield does not require that Q or jQuery are installed and will work fine without them - only run will not return anything.
-
-Read more about Q at https://github.com/kriskowal/q
-Read more about jQuery deferreds at http://api.jquery.com/jQuery.Deferred/
-
-``` javascript
-// See fetchUrl in example above
-
-(function* () {
-	return fetchUrl("/todos");
-}).run()
-  .then(function(err, result) {
-  	console.log("Here are the todos", result)
-  });
-```

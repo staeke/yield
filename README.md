@@ -22,12 +22,12 @@ function* fetchUrl() {
 
 function* getTodos(extra) {
 	try {
-        var todosTask = fetchUrl("/todos")
-        var emailTask = fetchUrl("/todos")
+        var todosTask = fetchUrl("/todos");
+        var emailTask = fetchUrl("/todos");
 
         // Wait for the two parallel tasks to finish
         var todosAndEmail = yield [todosTask, emailTask];
-        console.log("All fetched", todos, email)
+        console.log("All fetched", todos, email);
 	}
 	catch (e) {
 	    console.error("Oops...something went wrong", e);
@@ -38,24 +38,27 @@ Note that the generators return objects that we have to "yield" to see the resul
 
 
 And to just make the "why yield" answer a little clearer:
-- We can use try/catch again. You've read the posts about avoiding those pesky keywords in asynchronous code (i.e. all code) you can't rely on them being called. But hey, remember that convenient idea of wrapping a bunch of calls in try/catch and handling a lot of different errors in a grouped way for a piece of code. Perhaps being able to send an error back or outputting to some log. Sure, there are solutions in old callback land such as [node domains](http://nodejs.org/api/domain.html), load balancing workers, and it may be a good idea to die rather than to do stupid things. But, being pragmatic, it's pretty nifty to be able to actually catch all errors within a block of code and decide for yourself.
+- We can use try/catch again. You've read the posts about avoiding those pesky keywords in asynchronous code (i.e. all code) as you can't rely on them being called. But hey, remember that convenient idea of wrapping a bunch of calls in try/catch and handling a lot of different errors in a grouped way for a piece of code. Perhaps being able to send an error back or outputting to some log. Sure, there are solutions in old callback land such as [node domains](http://nodejs.org/api/domain.html), load balancing workers, and it may be a good idea to die rather than to do stupid things. But, being pragmatic, it's pretty nifty to be able to actually catch all errors within a block of code and decide for yourself.
 - Ever felt a little bad about cluttering your objects, parameters and classes with callbacks here and there. Get ready for cleaner code.
 - Ever written some asynchronous code and made a mistake in the error handler? Maybe you forgot to add one? Maybe your colleague did? Maybe you typed it incorrectly and now your application has just not returned from a call in quite some time. Console is just blank. :(
 - There are all kind of libraries to make asynchronous coding easier. Among the most popular are [async](https://github.com/caolan/async) in node, [jQuery Deferred](http://api.jquery.com/category/deferred-object/) and [Q](https://github.com/kriskowal/q). But there are oh so many ways different libraries handle this. jQuery use its own deferreds and node uses the passing of a function with one callback function. [Sequalize](http://sequelizejs.com/), a MySQL ORM, uses a notion of chaining success and error callbacks. And still other libraries use an option parameter with a success/error callback. For anyone coding javascript, especially in node, it's evident that these conversions take time, are error prone and leave an uneasy feeling of possibly missing something. And even if we don't consider errors, it's often pretty darn hard to follow what's happening, especially if there's a bit of conditional asynchronous extra calls.
 - Asyncronous stack traces? It is pretty saddening to just see that EventEmitter in your stack trace, right? With that said, there are node packages to make it easier such as [trycatch](https://github.com/CrabDude/trycatch).
 - ECMAScript is in a way catching up with this. Async handling has been major recent lanaguage features in languages such as C#, F#, Scala,
 
-## Preqrequisites.
-### For node
+So let's try it out!
+If you want to look at more examples, please have a look at the [tests](https://github.com/staeke/yield/blob/master/tests/main.js).
+
+## Prerequisites.
+#### For node
 - Install node js, minimum 0.11.2, but preferred 0.11.4, i.e. experimental branch. NOTE: 0.10.x branch does NOT work yet.
 - Remember to run with "node --harmony"  !
 
-### In Chrome
+#### In Chrome
 - Install Chrome canary from https://www.google.com/intl/en/chrome/browser/canary.html
 - In Chrome canary, go to the address chrome://flags/. Find "Enable Experimental JavaScript" and click "Enable" for that feature. Restart Chrome.
 
-## What about IE/Firefox/Opera/Safari/PhantomJS/etc?
-I will add supprt and tests as those browsers support generators. They currently don't.
+#### What about IE/Firefox/Opera/Safari/PhantomJS/etc?
+I will add supprt and tests as those browsers support generators. At present, they don't
 
 
 ## Usage

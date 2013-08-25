@@ -1,8 +1,11 @@
+// Some globals, depending if running in node or browser
 if (typeof(module) === "undefined") { module = {}; }
 if (typeof(window) === "undefined") { window = {}; }
 
+// Wrap everything in closure
 window.y = (function() {
 
+// Requires, handling both optional and needed in both node and browser
 var jQueryDeferred = typeof(window.jQuery) != "undefined" && window.jQuery.Deferred;
 if (typeof(require) === "function") {
 	// Node or requirejs
@@ -19,16 +22,44 @@ else {
 	}
 }
 
+// Export object
 var exp;
-
 module.exports = exp = {
+  /**
+   * Use y.gen() on an object or a single function. When used on an object, the this scope will be preserved. Use the second
+   * parameter to include your own thisScope if needed for the single function case.
+   * @return {Object}
+   * @param {Object|Function} objOrMethod
+   * @param {Object} thisScope
+   */
 	gen: makeGenerators,
+  /**
+   * Set the log property to have debug information from y sent to a function of your liking. This function will be called
+   * with a variable number of arguments (1-5) where the first argument is always a string.
+   */
 	log: null,
+  /**
+   * This utility function provides a means to query if an object is an ECMAScript 6 Generator function. Returns true/false.
+   */
 	isGeneratorFunction: isGeneratorFunction,
+  /**
+   * This utility function provides a means to query if an object is an ECMAScript 6 Generator object, as returned
+   * by a GeneratorFunction. Returns true/false.
+   */
 	isGeneratorObject: isGeneratorObject,
+  /**
+   * When yielding multiple object, such as yield [gen1, gen2] and there are multiple errors generated, these will be contained
+   * in this class. AggregateError supports the property errors which is an array containing the different error objects, and
+   * an overriden stack property.
+   */
 	AggregateError: AggregateError,
+  /**
+   * To avoid conflicts, the noConflict export provides a way to reach what the window.y variable pointed to before inclusion
+   * of the y script in a browser situation.
+   */
 	noConflict: typeof(y) !== "undefined" && y
 };
+var log = function() { exp.log && exp.log.apply(this, arguments); }
 
 function getDeferred() {
 	// Handle both Q deferreds and jQuery deferreds
@@ -101,8 +132,6 @@ if (_) {
 		"map": genMap
 	});
 }
-
-var log = function() { exp.log && exp.log.apply(this, arguments); }
 
 // TODO: Handle deep objects and possibly return values
 function makeGenerators(objOrMethod, thisScope) {

@@ -25,12 +25,6 @@ GeneratorObject.run = function run(cb) {
 };
 
 // Needed in node 0.11.2
-// var oldNext = GeneratorObject.next;
-// GeneratorObject.next = function(arguments) {
-// 	if (arguments.length > 0)
-// 		return this.send.apply(this, arguments);
-// 	return oldNext.apply(this, arguments);
-// }
 
 
 var _filter = _.filter;
@@ -48,7 +42,13 @@ function* ssleep(timeout) {
 			console.log("Finished sleeping for", timeout);
 			cb(null, "timeout " + timeout + " completed");
 		}, timeout);
-	}
+if (GeneratorObject.send) {
+	var oldNext = GeneratorObject.next;
+	GeneratorObject.next = function() {
+		if (arguments.length > 0)
+			return this.send.apply(this, arguments);
+		return oldNext.apply(this, arguments);
+	};
 }
 
 

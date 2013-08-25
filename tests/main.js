@@ -1,4 +1,4 @@
-var y = require("../yield");
+var y = require("../yyield");
 var $ = require("jquery-deferred");
 
 // Setup logging

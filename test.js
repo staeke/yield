@@ -1,4 +1,4 @@
 require("qunit").run({
-    code : "./yield.js",
+    code : "./yyield.js",
     tests : "./tests/main.js"
 });

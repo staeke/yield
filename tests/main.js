@@ -211,3 +211,46 @@ asyncTest("Running generator function (non-invoked)", function*() {
   var res = yield function*() { return function(cb) { cb(null, "res"); } }
   equal(res, "res");
 });
+
+var SuccessErrorMock = function() {
+	var cbErr, cbRet;
+	return {
+		error: function(cb) { cbErr = cb; },
+		success: function(cb) { cbRet = cb; },
+		resolve: function(ret) { cbRet(ret); },
+		reject: function(e) { cbErr(e); }
+	}
+}
+
+asyncTest("Yielding Success/error chainer, success", function*() {
+	var mock = SuccessErrorMock();
+	setTimeout(function() { mock.resolve("res"); }, 1);
+	var a = yield mock;
+	equal(a, "res");
+});
+
+asyncTest("Yielding Success/error chainer, error", function*() {
+	var mock = SuccessErrorMock();
+	setTimeout(function() { mock.reject(new Error()); }, 1);
+	try {
+		var a = yield mock;
+		ok(false, "No exception thrown");
+	}
+	catch(e) {
+		ok(e instanceof Error, "Error thrown");
+	}
+});
+
+asyncTest("Yielding Success/error chainer, failure method", function*() {
+	var mock = SuccessErrorMock();
+	mock.failure = mock.error;
+	delete mock.error;
+	setTimeout(function() { mock.reject(new Error()); }, 1);
+	try {
+		var a = yield mock;
+		ok(false, "No exception thrown");
+	}
+	catch(e) {
+		ok(e instanceof Error, "Error thrown");
+	}
+});

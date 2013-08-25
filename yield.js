@@ -171,6 +171,12 @@ function isPromise(obj) {
 	return obj && obj.then && obj.then instanceof Function;
 }
 
+function isSuccessFailureChainer(item) {
+	return item.success && _.isFunction(item.success) &&
+			((item.error && _.isFunction(item.error)) ||
+			(item.failure && _.isFunction(item.failure)));
+};
+
 function AggregateError(errors) {
 	this.message = "Multiple errors captured in parallel run. See the errors property";
 	this.errors = errors;
@@ -253,13 +259,13 @@ function runItemAsAsync(item, cb) {
 			runGeneratorAsAsync(item, function(err, result) {
 				item.__returnArguments = arguments;
 				cb.apply(this, arguments);
-				_(item.__completions).each(function(f){ 
+				_(item.__completions).each(function(f) {
 					log("Completing wait for generator with", item.__returnArguments);
-					f.apply(this, item.__returnArguments); 
-				})
+					f.apply(this, item.__returnArguments);
+				});
 			});
 		}
-	} 
+	}
 	else if (isNodeStyleAsyncFunction(item)) {
     log("Running yielded node style async function");
 		item (function(err, result) {
@@ -281,17 +287,22 @@ function runItemAsAsync(item, cb) {
 		});
 	}
 	else if (_.isArray(item)) {
-    log("Running parallel array");
+		log("Running parallel array");
 		runParallel(item)(cb);
 	}
-  else if (isGeneratorFunction(item)) {
-    log("Running generator function");
-    runGeneratorAsAsync(item(), cb);
-  }
+	else if (isGeneratorFunction(item)) {
+		log("Running generator function");
+		runGeneratorAsAsync(item(), cb);
+	}
+	else if (isSuccessFailureChainer(item)) {
+		var eFunc = item.error || item.failure;
+		eFunc(cb);
+		item.success(function(result) { cb(null, result); })
+	}
 	// TODO: Support .success/.error style
 	// TODO: Support GeneratorFunction
 	else {
-    log("Unsupported yield type for object", item);
+		log("Unsupported yield type for object", item);
 		var type = Object.prototype.toString.call(item);
 		throw new Error("Value yielded or returned from generator that is not asynchronously runnable: " + type);
 	}

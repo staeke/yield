@@ -155,8 +155,8 @@ function* getTodos() {
 
 function* getTodos() {
 	// By calling "next" on the iterator, we fire it off directly. Here we fetch both todos and emails
-	var todos = fetchUrl("/todos").next();
-	var email = fetchUrl("/todos").next();
+	var todos = fetchUrl("/todos").run(); // Calling built-in ".next()" would work just fine too
+	var email = fetchUrl("/todos").run(); // Calling built-in ".next()" would work just fine too
 
 	// Set up a handler "in the future". This will be called once todos has arrived
 	var todosWithExtra = _(todos).map(function*(todo) {
@@ -170,11 +170,29 @@ function* getTodos() {
 		return _(email).extend(extra);
 	});
 
-	// Finally wait for todos and e-mails. If we hadn't called next above, these calls would "kick it all off"
+	// Finally wait for todos and e-mails. If we hadn't called run above, the yield calls below calls would "kick it all off"
 	var todosResult = yield todosWithExtra;
 	var emailsResult = yield emailsWithExtra;
 
 	// Do something with todos here...
 }
 
+```
+
+#### The yield generators work fine with promises such as Q.defer and jQuery.Deferred
+
+By using promises based asynchornous flows, you are able to chain calls with multiple calls to .then() in e.g. Q or jQuery. You can mix this with calls to done/fail to create way to accomplish asynchronous data flows. Yield integrates with these by returning promises from the run method. Note that promises are only returned if you're running in node or requirejs (by using Q) or if you're running in a browser and jQuery exists. Yield does not require that Q or jQuery are installed and will work fine without them - only run will not return anything.
+
+Read more about Q at https://github.com/kriskowal/q
+Read more about jQuery deferreds at http://api.jquery.com/jQuery.Deferred/
+
+``` javascript
+// See fetchUrl in example above
+
+(function* () {
+	return fetchUrl("/todos");
+}).run()
+  .then(function(err, result) {
+  	console.log("Here are the todos", result)
+  });
 ```

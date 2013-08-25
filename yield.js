@@ -21,17 +21,16 @@ module.exports = exp = {
 
 function getDeferred() {
 	// Handle both Q deferreds and jQuery deferreds
-	var deferred;
 	if(Q && Q.defer) {
-		deferred = new Q.defer();
+		var deferred = new Q.defer();
 		return [deferred, deferred.promise];
 	}
 	else if(jQuery && jQuery.Deferred) {
-		deferred = new jQuery.Deferred();
+		var deferred = new jQuery.Deferred();
 		return [deferred, deferred];
 	}
 	
-	return deferred;
+	return undefined;
 }
 
 var emptyGenFunc = function*() { yield null; };

@@ -176,4 +176,10 @@ asyncTest("Ðeferred promise chaining", function() {
 			equal(res, "res");
 			start();
 		});
-})
+});
+
+asyncTest("Waiting for returned by run", function*() {
+	var captured;
+	yield (function*(){ captured = "res"; }).run();
+	equal(captured, "res");
+});

@@ -91,36 +91,15 @@ if (_) {
 	});
 }
 
-//var log = function() { exp.log && exp.log.apply(this, arguments); }
-var log = function() {
-	if (arguments.length === 0) {
-		console.log();
-	}
-	else if (arguments.length == 1) {
-		console.log(arguments[0]);
-	}
-	else if (arguments.length == 2) {
-		console.log(arguments[0], arguments[1]);
-	}
-	else if (arguments.length == 3) {
-		console.log(arguments[0], arguments[1], arguments[2]);
-	}
-	else if (arguments.length == 4) {
-		console.log(arguments[0], arguments[1], arguments[2], arguments[3]);
-	}
-};
+var log = function() { exp.log && exp.log.apply(this, arguments); }
 
 // TODO: Handle deep objects and possibly return values
 function makeGenerators(objOrMethod, thisScope) {
-	log("makeGenerators");
 	if (_.isFunction(objOrMethod)) {
-		log("Gen for function, returning generator");
 		return function*() {
 			var args = arguments;
-			log("gen generator called with", args);
 			return function(cb) {
 				args = _.toArray(args);
-				log("gen function called with", args);
 				args.push(cb);
 				return objOrMethod.apply(thisScope, args);
 			};

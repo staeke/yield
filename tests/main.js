@@ -204,3 +204,8 @@ asyncTest("Waiting for returned by run", function*() {
 	yield (function*(){ captured = "res"; }).run();
 	equal(captured, "res");
 });
+
+asyncTest("Running generator function (non-invoked)", function*() {
+  var res = yield function*() { return function(cb) { cb(null, "res"); } }
+  equal(res, "res");
+});

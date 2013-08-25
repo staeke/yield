@@ -284,6 +284,10 @@ function runItemAsAsync(item, cb) {
     log("Running parallel array");
 		runParallel(item)(cb);
 	}
+  else if (isGeneratorFunction(item)) {
+    log("Running generator function");
+    runGeneratorAsAsync(item(), cb);
+  }
 	// TODO: Support .success/.error style
 	// TODO: Support GeneratorFunction
 	else {

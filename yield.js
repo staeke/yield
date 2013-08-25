@@ -150,9 +150,12 @@ function runParallel(args) {
 		for (var i = 0; i < args.length; i++) {
 			// TODO: Don't allow same callback to be called twice
 			var funnel = function(err, res) {
-				log("Parallel call returned with", arguments);
-				if (err) errors.push(err);
-				results.push(res);
+				if (err) {
+					errors.push(err);
+				}
+				else {
+					results.push(res);
+				}
 				left--;
 				if (left === 0) {
 					if (errors.length === 1) {

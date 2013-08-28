@@ -3,7 +3,7 @@ if (typeof(module) === "undefined") { module = {}; }
 if (typeof(window) === "undefined") { window = {}; }
 
 // Wrap everything in closure
-window.y = (function() {
+window.Y = (function() {
 
 // Requires, handling both optional and needed in both node and browser
 var jQueryDeferred = typeof(window.jQuery) != "undefined" && window.jQuery.Deferred;
@@ -54,10 +54,10 @@ module.exports = exp = {
    */
 	AggregateError: AggregateError,
   /**
-   * To avoid conflicts, the noConflict export provides a way to reach what the window.y variable pointed to before inclusion
+   * To avoid conflicts, the noConflict export provides a way to reach what the window.Y variable pointed to before inclusion
    * of the y script in a browser situation.
    */
-	noConflict: typeof(y) !== "undefined" && y
+	noConflict: typeof(Y) !== "undefined" && Y
 };
 var log = function() { exp.log && exp.log.apply(this, arguments); }
 

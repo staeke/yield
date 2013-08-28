@@ -1,5 +1,6 @@
 var y = require("../yyield");
 var $ = require("jquery-deferred");
+var _ = require("lodash");
 
 // Setup logging
 y.log = function() {
@@ -254,3 +255,21 @@ asyncTest("Yielding Success/error chainer, failure method", function*() {
 		ok(e instanceof Error, "Error thrown");
 	}
 });
+
+asyncTest("Foreach lodash override", function*() {
+	var arr = [1,2,3];
+	yield (_(arr).each(function*(item, i) {
+		equal(arr[i], item, "Item equal at " + i);
+	}));
+});
+
+// Check error type
+//asyncTest("Foreach lodash override", funct  ion*() {
+//	var arr = [1,2,3];
+//	yield _(arr).each(function*(item, i) {
+//		equal(arr[i], item, "Item equal at " + i);
+//	});
+//});
+
+// TODO: Test yielding on same thing for other things than generators
+// TODO: Testing sync error for promise

@@ -92,6 +92,7 @@ GeneratorObject.run = function run(cb) {
 			if (deferreds) deferreds[0].resolve(result);
 		}
 	});
+	deferreds[1].fail(function(e) { console.error(e.stack || e); } )
 	return deferreds && deferreds[1];
 };
 
@@ -117,7 +118,7 @@ if (_) {
 
 	var genMap = function(collection, generatorCallback, thisArg) {
 		if (!isGeneratorFunction(generatorCallback)) {
-			return _map.apply(this, arguments);
+			return _map(collection, generatorCallback, thisArg);
 		}
 		// Wait for collection
 		// For each item in collection
@@ -126,9 +127,27 @@ if (_) {
 		});
 	};
 
+	var genForEach = function(collection, generatorCallback, thisArg) {
+		if (!isGeneratorFunction(generatorCallback)) {
+			return _forEach(collection, generatorCallback, thisArg);
+		}
+		return (function*(){
+			var index = -1,
+					length = collection.length;
+
+			while (++index < length) {
+				if ((yield generatorCallback(collection[index], index, collection)) === false) {
+					break;
+				}
+			}
+		})();
+	}
+
 	_.mixin({
 		"toGenerators": makeGenerators,
-		"map": genMap
+		"map": genMap,
+		"forEach": genForEach,
+		"each": genForEach
 	});
 }
 
@@ -160,7 +179,7 @@ function isGeneratorObject(obj) {
 }
 
 function isGeneratorFunction(obj) {
-	return Object.getPrototypeOf(obj) === GeneratorFunction;
+	return obj.prototype && Object.getPrototypeOf(obj) === GeneratorFunction;
 }
 
 function isNodeStyleAsyncFunction(fn) {
@@ -243,7 +262,8 @@ function runGeneratorAsAsync(genFunc, cb, genObj, err, result) {
 	runItemAsAsync(genObj.value, cb);
 }
 
-function runItemAsAsync(item, cb) {
+function runItemAsAsync(item, cb, isVal) {
+
 	if (isGeneratorObject(item)) {
 		if (item.__returnArguments) {
 			log("Using cached return value of already completed generator", item.__returnArguments);
@@ -282,9 +302,7 @@ function runItemAsAsync(item, cb) {
 				result = _.toArray(arguments);
 			}
 			cb(null, result);
-		}, function(e) {
-			cb(e);
-		});
+		}, cb);
 	}
 	else if (_.isArray(item)) {
 		log("Running parallel array");
@@ -295,11 +313,14 @@ function runItemAsAsync(item, cb) {
 		runGeneratorAsAsync(item(), cb);
 	}
 	else if (isSuccessFailureChainer(item)) {
-		var eFunc = item.error || item.failure;
-		eFunc(cb);
+		(item.error || item.failure)(cb);
 		item.success(function(result) { cb(null, result); })
 	}
 	else {
+		var val = item.valueOf();
+		if (val && val !== item && !isVal) {
+			return runItemAsAsync(val, cb, true);
+		}
 		log("Unsupported yield type for object", item);
 		var type = Object.prototype.toString.call(item);
 		throw new Error("Value yielded or returned from generator that is not asynchronously runnable: " + type);

@@ -63,6 +63,7 @@ If you want to look at more examples, please have a look at the [tests](https://
 	*  ``` html
 	<script src="yyield.js"></script>
 ```
+
 	* ...or require("yyield") with [RequireJS](http://requirejs.org/) and r.js
 5. Now Y-yield is accessible through window.Y. If something else was previuosly attached you can reach it at window.Y.noConflict
 

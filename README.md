@@ -50,12 +50,18 @@ If you want to look at more examples, please have a look at the [tests](https://
 
 ## Prerequisites.
 #### For node
-- Install node js, minimum 0.11.2, but preferred 0.11.4, i.e. experimental branch. NOTE: 0.10.x branch does NOT work yet.
-- Remember to run with "node --harmony"  !
+1. Install node js, minimum 0.11.2, but preferred 0.11.4, i.e. experimental branch. NOTE: 0.10.x branch does NOT work yet.
+2. Remember to run with "node --harmony"  !
+3. In your scripts, use: var Y = require("yyield");
 
 #### In Chrome
-- Install Chrome canary from https://www.google.com/intl/en/chrome/browser/canary.html
-- In Chrome canary, go to the address chrome://flags/. Find "Enable Experimental JavaScript" and click "Enable" for that feature. Restart Chrome.
+1. Install Chrome canary from https://www.google.com/intl/en/chrome/browser/canary.html
+2. In Chrome canary, go to the address chrome://flags/. Find "Enable Experimental JavaScript" and click "Enable" for that feature. Restart Chrome.
+3. First, include [underscore.js](https://github.com/jashkenas/underscore) or [lodash.js](https://github.com/lodash/lodash)
+4. After that script include, include yyield. AMD is not implemented yet. Please use either
+	* <script src="yyield.js"></script>
+	* ...or require("yyield") with [RequireJS](http://requirejs.org/) and r.js
+5. Now Y-yield is accessible through window.Y. If something else was previuosly attached you can reach it at window.Y.noConflict
 
 #### What about IE/Firefox/Opera/Safari/PhantomJS/etc?
 I will add supprt and tests as those browsers support generators. At present, they don't
@@ -114,16 +120,16 @@ function(..., cb)
 Some examples:
 
 ``` javascript
-var y = require("yield");
+var Y = require("yield");
 var lib = require("somelib")
-var genlib = y.gen(lib);
-var genObj = y.gen(new lib.SomeClass());
-var genFunc = y.gen(lib.someFunction);
+var genlib = Y.gen(lib);
+var genObj = Y.gen(new lib.SomeClass());
+var genFunc = Y.gen(lib.someFunction);
 
 (function*() {
-	var x = yield genlib.someFunction(...);
-	var y = yield genObj.someInstanceFunction(...);
-	var z = yield genFunc(...);
+	var a = yield genlib.someFunction(...);
+	var b = yield genObj.someInstanceFunction(...);
+	var c = yield genFunc(...);
 }).run();
 ```
 
@@ -223,6 +229,13 @@ function* getTodos() {
 ```
 
 #### Using lo-dash (underscore) functional paradigms
+
+Y-yield overrides a couple of underscore/lodash functions to make them generator aware so that you can use them with generators. Currently - the following functions are supported:
+
+* each/forEach - runs sequentially [lodash docs](http://lodash.com/docs#forEach)/[underscore docs](http://lodash.com/docs#forEach)
+* map - runs in parallel [lodash docs](http://lodash.com/docs#map)/[underscore docs](http://lodash.com/docs#map)
+* filter/select - [lodash docs](http://lodash.com/docs#filter)/[underscore docs](http://lodash.com/docs#filter)
+* reject - runs in parallel - [lodash docs](http://lodash.com/docs#reject)/[underscore docs](http://lodash.com/docs#filter)
 
 ``` javascript
 // See fetchUrl in example above

@@ -180,6 +180,7 @@ asyncTest("Undefined variable use should result in ReferenceError in Deferred", 
 
 asyncTest("Parallel wait for errors should result in error array", function*() {
 	try {
+		Y.parallelErrorsDefault = Y.PARALLEL_ERRORS_WAIT;
 		var op = (function*() { throw new Error(); })();
 		yield [op, op];
 		ok(false, "Exception not thrown");
@@ -190,6 +191,28 @@ asyncTest("Parallel wait for errors should result in error array", function*() {
 		ok(e instanceof y.AggregateError, "e instanceof AggregateError");
 		equal(e.errors.length, 2, "length === 2");
 		start();
+	}
+});
+
+asyncTest("Parallel errors without wait should result in orphan callback being called and one error", function*() {
+	var defs = [$.Deferred(), $.Deferred()];
+	$.when(defs).then(function() {
+		start();
+	});
+	try {
+		Y.parallelErrorsDefault = Y.PARALLEL_ERRORS_THROW;
+		Y.onOrphanCompletion = function() {
+			ok(true, "orphanCompletion called");
+			defs[0].resolve();
+		}
+		var op = (function*() { throw new Error(); })();
+		yield [op, op];
+		ok(false, "Exception not thrown");
+	}
+	catch(e) {
+		ok(true, "Exception thrown");
+		ok(e instanceof Error, "e instanceof Error");
+		defs[1].resolve();
 	}
 });
 

@@ -60,6 +60,10 @@ module.exports = exp = {
 	noConflict: typeof(Y) !== "undefined" && Y
 };
 var log = function() { exp.log && exp.log.apply(this, arguments); }
+		PARALLEL_ERRORS_THROW: 0,
+		PARALLEL_ERRORS_WAIT: 1,
+		parallelErrorsDefault: 0,
+		onOrphanCompletion: onOrhpanCompletion,
 
 function getPromise() {
 	// Handle both Q deferreds and jQuery deferreds
@@ -196,45 +200,74 @@ function isSuccessFailureChainer(item) {
 			(item.failure && _.isFunction(item.failure)));
 };
 
-function AggregateError(errors) {
-	this.message = "Multiple errors captured in parallel run. See the errors property";
-	this.errors = errors;
-	this.stack = _(errors).pick("stack").join("\n\n");
-}
-AggregateError.prototype = Error.prototype;
+	function isSuccessFailureChainer(item) {
+		return item.success && _.isFunction(item.success) &&
+				((item.error && _.isFunction(item.error)) ||
+				(item.failure && _.isFunction(item.failure)));
+	};
 
-function runParallel(args) {
-
-	return function(cb) {
-		var left = args.length;
-		errors = [];
-		results = [];
-		for (var i = 0; i < args.length; i++) {
-			// TODO: Don't allow same callback to be called twice
-			var funnel = function(err, res) {
-				if (err) {
-					errors.push(err);
-				}
-				else {
-					results.push(res);
-				}
-				left--;
-				if (left === 0) {
-					if (errors.length === 1) {
-						cb(errors[0]);
-					}
-					if (errors.length > 0) {
-						cb(new AggregateError(errors));
-					}
-					else {
-						cb(null, results);
-					}
-				}
-			};
-			runItemAsAsync(args[i], funnel);
+	function onOrhpanCompletion(err, result) {
+		if (err) {
+			console.error("Orphan completion with error. If this is expected, consider changing the Y.parallelErrorsDefault to Y.PARALLEL_ERRORS_WAIT.", err.stack || err);
 		}
 	}
-}
+
+	function AggregateError(errors) {
+		this.message = "Multiple errors captured in parallel run. See the errors property";
+		this.errors = errors;
+		this.stack = _(errors).pick("stack").join("\n\n");
+	}
+	AggregateError.prototype = Error.prototype;
+
+	function runParallel(args, waitMode) {
+		waitMode = waitMode || exp.parallelErrorsDefault;
+
+		return function(cb) {
+			var left = [];
+			errors = [];
+			results = [];
+			left = _.range(args.length);
+			var returned = false;
+			_(args).each(function(arg, i) {
+				var funnel = function(err, res) {
+					if (returned) {
+						exp.onOrphanCompletion && exp.onOrphanCompletion(err, res);
+						return;
+					}
+					var index = left.indexOf(i);
+					if (index < 0) {
+						var e2 = new Error("Parallel async block returned twice. See the result and error properties.")
+						e2.error = err;
+						e2.result = res;
+						errors.push(e2);
+					}
+					else {
+						left.splice(index, 1);
+						if (err) {
+							errors.push(err);
+						}
+						else {
+							results[i] = res;
+						}
+					}
+
+					if (left.length === 0 || (errors.length > 0 && waitMode === exp.PARALLEL_ERRORS_THROW)) {
+						returned = true;
+						if (errors.length === 1) {
+							cb(errors[0]);
+						}
+						if (errors.length > 0) {
+							cb(new AggregateError(errors));
+						}
+						else {
+							cb(null, _.toArray(results).valueOf());
+						}
+					}
+				}
+				runItemAsAsync(arg, funnel);
+			});
+		}
+	}
 
 function runGeneratorAsAsync(genFunc, cb, genObj, err, result) {
 	try {

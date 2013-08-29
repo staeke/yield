@@ -286,13 +286,12 @@ asyncTest("Foreach lodash override", function*() {
 	}));
 });
 
-// Check error type
-//asyncTest("Foreach lodash override", funct  ion*() {
-//	var arr = [1,2,3];
-//	yield _(arr).each(function*(item, i) {
-//		equal(arr[i], item, "Item equal at " + i);
-//	});
-//});
-
+asyncTest("map lodash override", function*() {
+	var mapped = yield _([5,2,1]).map(function*(ms) {
+		return Y.sleep(ms);
+	});
+	ok(_.isEqual(mapped, [5,2,1]), "Equal " + mapped);
+});
+// TODO: Test thisArg for e.g. map
 // TODO: Test yielding on same thing for other things than generators
-// TODO: Testing sync error for promise
+// TODO: Error at double return

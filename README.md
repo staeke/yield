@@ -59,12 +59,11 @@ If you want to look at more examples, please have a look at the [tests](https://
 1. Install Chrome canary from https://www.google.com/intl/en/chrome/browser/canary.html
 2. In Chrome canary, go to the address chrome://flags/. Find "Enable Experimental JavaScript" and click "Enable" for that feature. Restart Chrome.
 3. First, include [underscore.js](https://github.com/jashkenas/underscore) or [lodash.js](https://github.com/lodash/lodash)
-4. After that script include, include yyield. AMD is not implemented yet. Please use either
-	*  ```HTML
+4. After that script include, include yyield. AMD is not implemented yet. Please use either:
+``` HTML
 	<script src="yyield.js"></script>
 ```
-
-	* ...or require("yyield") with [RequireJS](http://requirejs.org/) and r.js
+	...or require("yyield") with [RequireJS](http://requirejs.org/) and r.js
 
 5. Now Y-yield is accessible through window.Y. If something else was previuosly attached you can reach it at window.Y.noConflict
 

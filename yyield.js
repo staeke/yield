@@ -107,6 +107,9 @@ window.Y = (function() {
 			else {
 				if (deferreds) deferreds[0].resolve(result);
 			}
+			if (err && !cb && !deferreds) {
+				throw err;
+			}
 		});
 		deferreds[1].fail(function(e) { console.error(e.stack || e); } )
 		return deferreds && deferreds[1];

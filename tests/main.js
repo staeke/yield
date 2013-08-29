@@ -324,4 +324,3 @@ asyncTest("lodash map with generators can return boolean false values", function
 
 // TODO: Test thisArg for e.g. map
 // TODO: Test yielding on same thing for other things than generators
-// TODO: Error at double return

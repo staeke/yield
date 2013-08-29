@@ -130,22 +130,33 @@ window.Y = (function() {
 		var _filter = _.filter;
 		var _reject = _.reject;
 		var _map = _.map;
-		var _forEach = _.forEach;
+		var _each = _.each;
 		var _invoke = _.invoke;
 		var _every = _.every;
 		var _some = _.some;
 
-		var genFilter = function(collection, generatorCallback, thisArg) {
-			if (!isGeneratorFunction(generatorCallback)) {
-				return _map(collection, generatorCallback, thisArg);
+		var mapThenFuncOverride = function(origFunc) {
+			return function(collection, generatorCallback, thisArg) {
+				if (!isGeneratorFunction(generatorCallback)) {
+					return origFunc(collection, generatorCallback, thisArg);
+				}
+				return function*() {
+					var mapped = yield _map(collection, generatorCallback, thisArg);
+					return origFunc(collection, function(val, index) {
+						return mapped[index];
+					}, thisArg);
+				};
 			}
 		}
 
-		var genForEach = function(collection, generatorCallback, thisArg) {
+		var genFilter = mapThenFuncOverride(_filter);
+		var genReject = mapThenFuncOverride(_reject);
+
+		var genEach = function(collection, generatorCallback, thisArg) {
 			if (!isGeneratorFunction(generatorCallback)) {
-				return _forEach(collection, generatorCallback, thisArg);
+				return _each(collection, generatorCallback, thisArg);
 			}
-			return (function*(){
+			return function*(){
 				var index = -1,
 						length = collection.length;
 
@@ -154,13 +165,16 @@ window.Y = (function() {
 						break;
 					}
 				}
-			})();
+			};
 		}
 
 		_.mixin({
 			"toGenerators": makeGenerators,
-			"forEach": genForEach,
-			"each": genForEach
+			"each": genEach,
+			"forEach": genEach,
+			"filter": genFilter,
+			"select": genFilter,
+			"reject": genReject
 		});
 	}
 

@@ -229,7 +229,9 @@ window.Y = (function() {
 			left = _.range(args.length);
 			var returned = false;
 			_(args).each(function(arg, i) {
+				log("Running parallel", i);
 				var funnel = function(err, res) {
+					log("Returned from parallel", i);
 					if (returned) {
 						exp.onOrphanCompletion && exp.onOrphanCompletion(err, res);
 						return;
@@ -252,6 +254,7 @@ window.Y = (function() {
 					}
 
 					if (left.length === 0 || (errors.length > 0 && waitMode === exp.PARALLEL_ERRORS_THROW)) {
+						log("Completing parallel", i);
 						returned = true;
 						if (errors.length === 1) {
 							cb(errors[0]);

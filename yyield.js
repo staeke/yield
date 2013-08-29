@@ -291,15 +291,33 @@ window.Y = (function() {
 				runGeneratorAsAsync(genFunc, finishedCb, genObj, err, result);
 			}
 		}
-		else if (!genObj.value) {
+		else if (typeof genObj.value === "undefined") {
 			return cb();
 		}
 
-		runItemAsAsync(genObj.value, cb);
+		runItemAsAsync(genObj.value, cb, false, genObj.done);
 	}
 
-	function runItemAsAsync(item, cb, isVal) {
+	function isAsyncRunnable(item, isVal) {
+		var ok = isGeneratorFunction(item) ||
+				isGeneratorObject(item) ||
+				isNodeStyleAsyncFunction(item) ||
+				isPromise(item) ||
+				isSuccessFailureChainer(item);
+		if (ok) { return true; }
+		var val = item.valueOf();
+		if (val !== item && !isVal) {
+			return isAsyncRunnable(val, true);
+		}
+		return false;
+	}
 
+	function runItemAsAsync(item, cb, isVal, isValueOk) {
+
+		if (isGeneratorFunction(item)) {
+			log("Running generator function");
+			runGeneratorAsAsync(item(), cb);
+		}
 		if (isGeneratorObject(item)) {
 			if (item.__returnArguments) {
 				log("Using cached return value of already completed generator", item.__returnArguments);
@@ -340,13 +358,9 @@ window.Y = (function() {
 				cb(null, result);
 			}, cb);
 		}
-		else if (_.isArray(item)) {
+		else if (_.isArray(item) && _every(item, isAsyncRunnable)) {
 			log("Running parallel array");
 			runParallel(item)(cb);
-		}
-		else if (isGeneratorFunction(item)) {
-			log("Running generator function");
-			runGeneratorAsAsync(item(), cb);
 		}
 		else if (isSuccessFailureChainer(item)) {
 			(item.error || item.failure)(cb);
@@ -355,11 +369,17 @@ window.Y = (function() {
 		else {
 			var val = item.valueOf();
 			if (val && val !== item && !isVal) {
-				return runItemAsAsync(val, cb, true);
+				return runItemAsAsync(val, cb, true, isValueOk);
+			}
+			if (isValueOk) {
+				cb(null, item);
+				return;
 			}
 			log("Unsupported yield type for object", item);
 			var type = Object.prototype.toString.call(item);
-			throw new Error("Value yielded or returned from generator that is not asynchronously runnable: " + type);
+			var e = new Error("Value yielded from generator that is not asynchronously runnable: " + type);
+			cb(e);
+			console.error(e.stack);
 		}
 	}
 	return exp;

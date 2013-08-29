@@ -1,9 +1,9 @@
-var y = require("../yyield");
+var Y = require("../yyield");
 var $ = require("jquery-deferred");
 var _ = require("lodash");
 
 // Setup logging
-y.log = function() {
+Y.log = function() {
 	if (arguments.length === 0) {
 		console.log();
 	}
@@ -49,7 +49,7 @@ function thrower(msg, cb) {
 
 var oldAsyncTest = asyncTest;
 asyncTest = function genAwareAsyncTest(name, testFunc) {
-	if (!y.isGeneratorFunction(testFunc)) {
+	if (!Y.isGeneratorFunction(testFunc)) {
 		oldAsyncTest.apply(this, arguments);
 		return;
 	}
@@ -63,7 +63,7 @@ asyncTest = function genAwareAsyncTest(name, testFunc) {
 
 var oldThrows = throws;
 throws = function genAwareThrows(throwingFunc, descOrTypeOrMessage, message) {
-	if (!y.isGeneratorFunction(throwingFunc)) {
+	if (!Y.isGeneratorFunction(throwingFunc)) {
 		oldThrows.apply(this, arguments);
 		return;
 	}
@@ -188,7 +188,7 @@ asyncTest("Parallel wait for errors should result in error array", function*() {
 	catch(e) {
 		ok(true, "Exception thrown");
 		ok(e instanceof Error, "e instanceof Error");
-		ok(e instanceof y.AggregateError, "e instanceof AggregateError");
+		ok(e instanceof Y.AggregateError, "e instanceof AggregateError");
 		equal(e.errors.length, 2, "length === 2");
 		start();
 	}

@@ -5,200 +5,200 @@ if (typeof(window) === "undefined") { window = {}; }
 // Wrap everything in closure
 window.Y = (function() {
 
-// Requires, handling both optional and needed in both node and browser
-var jQueryDeferred = typeof(window.jQuery) != "undefined" && window.jQuery.Deferred;
-if (typeof(require) === "function") {
-	// Node or requirejs
-	var _ = require("lodash");
-	try { var Q = require("q"); } catch(e) {}
-}
-else {
-	// Browser, verify dependencies
-	if (typeof(window._) === "undefined") {
-		console.error("lodash.js or underscore.js not found. Please include either script dependency on your page.");
+	// Requires, handling both optional and needed in both node and browser
+	var jQueryDeferred = typeof(window.jQuery) != "undefined" && window.jQuery.Deferred;
+	if (typeof(require) === "function") {
+		// Node or requirejs
+		var _ = require("lodash");
+		try { var Q = require("q"); } catch(e) {}
 	}
 	else {
-		var _ = window._;
+		// Browser, verify dependencies
+		if (typeof(window._) === "undefined") {
+			console.error("lodash.js or underscore.js not found. Please include either script dependency on your page.");
+		}
+		else {
+			var _ = window._;
+		}
 	}
-}
 
-// Export object
-var exp;
-module.exports = exp = {
-  /**
-   * Use y.gen() on an object or a single function. When used on an object, the this scope will be preserved. Use the second
-   * parameter to include your own thisScope if needed for the single function case.
-   * @return {Object}
-   * @param {Object|Function} objOrMethod
-   * @param {Object} thisScope
-   */
-	gen: makeGenerators,
-  /**
-   * Set the log property to have debug information from y sent to a function of your liking. This function will be called
-   * with a variable number of arguments (1-5) where the first argument is always a string.
-   */
-	log: null,
-  /**
-   * This utility function provides a means to query if an object is an ECMAScript 6 Generator function. Returns true/false.
-   */
-	isGeneratorFunction: isGeneratorFunction,
-  /**
-   * This utility function provides a means to query if an object is an ECMAScript 6 Generator object, as returned
-   * by a GeneratorFunction. Returns true/false.
-   */
-	isGeneratorObject: isGeneratorObject,
-  /**
-   * When yielding multiple object, such as yield [gen1, gen2] and there are multiple errors generated, these will be contained
-   * in this class. AggregateError supports the property errors which is an array containing the different error objects, and
-   * an overriden stack property.
-   */
-	AggregateError: AggregateError,
-  /**
-   * To avoid conflicts, the noConflict export provides a way to reach what the window.Y variable pointed to before inclusion
-   * of the y script in a browser situation.
-   */
-	noConflict: typeof(Y) !== "undefined" && Y
-};
-var log = function() { exp.log && exp.log.apply(this, arguments); }
+	// Export object
+	var exp;
+	module.exports = exp = {
+	  /**
+	   * Use y.gen() on an object or a single function. When used on an object, the this scope will be preserved. Use the second
+	   * parameter to include your own thisScope if needed for the single function case.
+	   * @return {Object}
+	   * @param {Object|Function} objOrMethod
+	   * @param {Object} thisScope
+	   */
+		gen: makeGenerators,
+	  /**
+	   * Set the log property to have debug information from y sent to a function of your liking. This function will be called
+	   * with a variable number of arguments (1-5) where the first argument is always a string.
+	   */
+		log: null,
+	  /**
+	   * This utility function provides a means to query if an object is an ECMAScript 6 Generator function. Returns true/false.
+	   */
+		isGeneratorFunction: isGeneratorFunction,
+	  /**
+	   * This utility function provides a means to query if an object is an ECMAScript 6 Generator object, as returned
+	   * by a GeneratorFunction. Returns true/false.
+	   */
+		isGeneratorObject: isGeneratorObject,
+	  /**
+	   * When yielding multiple object, such as yield [gen1, gen2] and there are multiple errors generated, these will be contained
+	   * in this class. AggregateError supports the property errors which is an array containing the different error objects, and
+	   * an overriden stack property.
+	   */
+		AggregateError: AggregateError,
+	  /**
+	   * To avoid conflicts, the noConflict export provides a way to reach what the window.Y variable pointed to before inclusion
+	   * of the y script in a browser situation.
+	   */
+		noConflict: typeof(Y) !== "undefined" && Y,
 		PARALLEL_ERRORS_THROW: 0,
 		PARALLEL_ERRORS_WAIT: 1,
 		parallelErrorsDefault: 0,
 		onOrphanCompletion: onOrhpanCompletion,
 
-function getPromise() {
-	// Handle both Q deferreds and jQuery deferreds
-	if(Q && Q.defer) {
-		var deferred = new Q.defer();
-		return [deferred, deferred.promise];
-	}
-	else if(jQueryDeferred) {
-		var deferred = new jQueryDeferred();
-		return [deferred, deferred];
-	}
-	
-	return undefined;
-}
-
-var emptyGenFunc = function*() { yield null; };
-var GeneratorFunction = Object.getPrototypeOf(emptyGenFunc);
-GeneratorFunction.run = function run(cb) {
-	return this().run(cb);
-};
-var GeneratorObject = Object.getPrototypeOf(Object.getPrototypeOf(emptyGenFunc()));
-GeneratorObject.run = function run(cb) {
-	var deferreds = getPromise();
-	runGeneratorAsAsync(this, function(err, result) {
-		if (cb) { cb(err, result) };
-		if (err) {
-		 	if (deferreds) deferreds[0].reject(err);
-		}
-		else {
-			if (deferreds) deferreds[0].resolve(result);
-		}
-	});
-	deferreds[1].fail(function(e) { console.error(e.stack || e); } )
-	return deferreds && deferreds[1];
-};
-
-// Compatibility fix - needed in node 0.11.2
-if (GeneratorObject.send) {
-	var oldNext = GeneratorObject.next;
-	GeneratorObject.next = function() {
-		if (arguments.length > 0)
-			return this.send.apply(this, arguments);
-		return oldNext.apply(this, arguments);
-	};
-}
-
-// Lo-dash/underscore extensions
-if (_) {
-	var _filter = _.filter;
-	var _reject = _.reject;
-	var _map = _.map;
-	var _forEach = _.forEach;
-	var _invoke = _.invoke;
-	var _every = _.every;
-	var _some = _.some;
-
-	var genMap = function(collection, generatorCallback, thisArg) {
-		if (!isGeneratorFunction(generatorCallback)) {
-			return _map(collection, generatorCallback, thisArg);
-		}
-		// Wait for collection
-		// For each item in collection
-		return _map(collection, function(item) {
-			return generatorCallback(item);
-		});
-	};
-
-	var genForEach = function(collection, generatorCallback, thisArg) {
-		if (!isGeneratorFunction(generatorCallback)) {
-			return _forEach(collection, generatorCallback, thisArg);
-		}
-		return (function*(){
-			var index = -1,
-					length = collection.length;
-
-			while (++index < length) {
-				if ((yield generatorCallback(collection[index], index, collection)) === false) {
-					break;
-				}
-			}
-		})();
-	}
-
-	_.mixin({
-		"toGenerators": makeGenerators,
-		"map": genMap,
-		"forEach": genForEach,
-		"each": genForEach
-	});
-}
-
-// TODO: Handle deep objects and possibly return values
-function makeGenerators(objOrMethod, thisScope) {
-	if (_.isFunction(objOrMethod)) {
-		return function*() {
-			var args = arguments;
+		sleep: function* sleep(timeout) {
 			return function(cb) {
-				args = _.toArray(args);
-				args.push(cb);
-				return objOrMethod.apply(thisScope, args);
-			};
+				if (timeout <= 0) {
+					cb(null, timeout);
+					return;
+				}
+				setTimeout(function() {
+					cb(null, timeout);
+				}, timeout);
+			}
+		}
+	};
+	var log = function() { exp.log && exp.log.apply(this, arguments); }
+
+	function getPromise() {
+		// Handle both Q deferreds and jQuery deferreds
+		if(Q && Q.defer) {
+			var deferred = new Q.defer();
+			return [deferred, deferred.promise];
+		}
+		else if(jQueryDeferred) {
+			var deferred = new jQueryDeferred();
+			return [deferred, deferred];
+		}
+
+		return undefined;
+	}
+
+	var emptyGenFunc = function*() { yield null; };
+	var GeneratorFunction = Object.getPrototypeOf(emptyGenFunc);
+	GeneratorFunction.run = function run(cb) {
+		return this().run(cb);
+	};
+	var GeneratorObject = Object.getPrototypeOf(Object.getPrototypeOf(emptyGenFunc()));
+	GeneratorObject.run = function run(cb) {
+		var deferreds = getPromise();
+		runGeneratorAsAsync(this, function(err, result) {
+			if (cb) { cb(err, result) };
+			if (err) {
+			  if (deferreds) deferreds[0].reject(err);
+			}
+			else {
+				if (deferreds) deferreds[0].resolve(result);
+			}
+		});
+		deferreds[1].fail(function(e) { console.error(e.stack || e); } )
+		return deferreds && deferreds[1];
+	};
+
+	// Compatibility fix - needed in node 0.11.2
+	if (GeneratorObject.send) {
+		var oldNext = GeneratorObject.next;
+		GeneratorObject.next = function() {
+			if (arguments.length > 0)
+				return this.send.apply(this, arguments);
+			return oldNext.apply(this, arguments);
 		};
 	}
-	else if (_.isObject(objOrMethod)) {
-		var copy = _.clone(objOrMethod);
-		_.each(_.functions(objOrMethod), function(fnName) {
-			copy[fnName] = makeGenerators(objOrMethod[fnName], objOrMethod);
+
+	// Lo-dash/underscore extensions
+	if (_) {
+		var _filter = _.filter;
+		var _reject = _.reject;
+		var _map = _.map;
+		var _forEach = _.forEach;
+		var _invoke = _.invoke;
+		var _every = _.every;
+		var _some = _.some;
+
+		var genFilter = function(collection, generatorCallback, thisArg) {
+			if (!isGeneratorFunction(generatorCallback)) {
+				return _map(collection, generatorCallback, thisArg);
+			}
+		}
+
+		var genForEach = function(collection, generatorCallback, thisArg) {
+			if (!isGeneratorFunction(generatorCallback)) {
+				return _forEach(collection, generatorCallback, thisArg);
+			}
+			return (function*(){
+				var index = -1,
+						length = collection.length;
+
+				while (++index < length) {
+					if ((yield generatorCallback(collection[index], index, collection)) === false) {
+						break;
+					}
+				}
+			})();
+		}
+
+		_.mixin({
+			"toGenerators": makeGenerators,
+			"forEach": genForEach,
+			"each": genForEach
 		});
-		return copy;
 	}
 
-	throw new Error("Unsupported object [" + objOrMethod + "] for conversion to generator. Only functions and function members of objects of type Object are supported. Received");
-}
+	// TODO: Handle deep objects and possibly return values
+	function makeGenerators(objOrMethod, thisScope) {
+		if (_.isFunction(objOrMethod)) {
+			return function*() {
+				var args = arguments;
+				return function(cb) {
+					args = _.toArray(args);
+					args.push(cb);
+					return objOrMethod.apply(thisScope, args);
+				};
+			};
+		}
+		else if (_.isObject(objOrMethod)) {
+			var copy = _.clone(objOrMethod);
+			_.each(_.functions(objOrMethod), function(fnName) {
+				copy[fnName] = makeGenerators(objOrMethod[fnName], objOrMethod);
+			});
+			return copy;
+		}
 
-function isGeneratorObject(obj) {
-	return obj instanceof GeneratorFunction;
-}
+		throw new Error("Unsupported object [" + objOrMethod + "] for conversion to generator. Only functions and function members of objects of type Object are supported. Received");
+	}
 
-function isGeneratorFunction(obj) {
-	return obj.prototype && Object.getPrototypeOf(obj) === GeneratorFunction;
-}
+	function isGeneratorObject(obj) {
+		return obj instanceof GeneratorFunction;
+	}
 
-function isNodeStyleAsyncFunction(fn) {
-	return _.isFunction(fn) && fn.length === 1;
-}
+	function isGeneratorFunction(obj) {
+		return obj.prototype && Object.getPrototypeOf(obj) === GeneratorFunction;
+	}
 
-function isPromise(obj) {
-	return obj && obj.then && obj.then instanceof Function;
-}
+	function isNodeStyleAsyncFunction(fn) {
+		return _.isFunction(fn) && fn.length === 1;
+	}
 
-function isSuccessFailureChainer(item) {
-	return item.success && _.isFunction(item.success) &&
-			((item.error && _.isFunction(item.error)) ||
-			(item.failure && _.isFunction(item.failure)));
-};
+	function isPromise(obj) {
+		return obj && obj.then && obj.then instanceof Function;
+	}
 
 	function isSuccessFailureChainer(item) {
 		return item.success && _.isFunction(item.success) &&

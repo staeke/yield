@@ -335,7 +335,7 @@ window.Y = (function() {
 			log("Running generator function");
 			runGeneratorAsAsync(item(), cb);
 		}
-		if (isGeneratorObject(item)) {
+		else if (isGeneratorObject(item)) {
 			if (item.__returnArguments) {
 				log("Using cached return value of already completed generator", item.__returnArguments);
 				cb.apply(this, item.__returnArguments);

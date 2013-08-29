@@ -291,7 +291,7 @@ asyncTest("map lodash override", function*() {
 		// To make it "difficult" we will make them not return in order
 		return Y.sleep(ms);
 	});
-	ok(_.isEqual(mapped, [5,1,3]), "Equal " + mapped);
+	deepEqual(mapped, [5,1,3], "Equal");
 });
 
 asyncTest("filter lodash override test with even numbers returning not in order", function*() {
@@ -302,7 +302,7 @@ asyncTest("filter lodash override test with even numbers returning not in order"
 		// Return even
 		return same % 2 == 0;
 	});
-	ok(_.isEqual(filtered, [0,2]), "Filtered only contains even " + filtered);
+	deepEqual(filtered, [0,2], "Filtered only contains even ");
 })
 
 asyncTest("reject lodash override test with even numbers returning not in order", function*() {
@@ -313,13 +313,13 @@ asyncTest("reject lodash override test with even numbers returning not in order"
 		// Return even
 		return same % 2 !== 0;
 	});
-	ok(_.isEqual(filtered, [3,1]), "Rejected only contains odd" + filtered);
+	deepEqual(filtered, [3,1], "Rejected only contains odd");
 })
 
 asyncTest("lodash map with generators can return boolean false values", function*() {
 	var arr = [false, false];
 	var mapped = yield _(arr).map(function*(a) { return a; });
-	ok(_.isEqual(mapped, [false,false]), "Mapped only contains false" + mapped);
+	deepEqual(mapped, [false,false], "Mapped only contains false");
 });
 
 // TODO: Test thisArg for e.g. map

@@ -1,6 +1,6 @@
 {
   "name": "yyield",
-  "version": "0.9.3",
+  "version": "0.9.4",
   "description": "Asynchronous coding using ECMAScript 6 generators",
   "main": "yield.js",
   "dependencies": {

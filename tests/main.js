@@ -322,5 +322,12 @@ asyncTest("lodash map with generators can return boolean false values", function
 	deepEqual(mapped, [false,false], "Mapped only contains false");
 });
 
+asyncTest("thisArg works in lodash map", function*() {
+	var arr = [1];
+	var thisArg = { x: "test" }
+	var res = yield _.map([arr], function*(i) {
+		equal(this.x, "test");
+	}, thisArg);
+});
+
 // TODO: Test thisArg for e.g. map
-// TODO: Test yielding on same thing for other things than generators

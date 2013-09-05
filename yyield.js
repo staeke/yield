@@ -111,8 +111,10 @@ window.Y = (function() {
 				throw err;
 			}
 		});
-		deferreds[1].fail(function(e) { console.error(e.stack || e); } )
-		return deferreds && deferreds[1];
+		if (deferreds) {
+			deferreds[1].fail(function(e) { console.error(e.stack || e); } )
+			return deferreds[1];
+		}
 	};
 
 	// Compatibility fix - needed in node 0.11.2

@@ -330,4 +330,44 @@ asyncTest("thisArg works in lodash map", function*() {
 	}, thisArg);
 });
 
-// TODO: Test thisArg for e.g. map
+asyncTest("thisArg works in lodash filter", function*() {
+	var arr = [1];
+	var thisArg = { x: "test" }
+	yield _.filter([arr], function*(i) {
+		equal(this.x, "test");
+	}, thisArg);
+});
+
+asyncTest("thisArg works in lodash filter", function*() {
+	var arr = [1];
+	var thisArg = { x: "test" }
+	yield _.filter([arr], function*(i) {
+		equal(this.x, "test");
+	}, thisArg);
+});
+
+asyncTest("thisArg works in lodash each", function*() {
+	var arr = [1];
+	var thisArg = { x: "test" }
+	yield _.each([arr], function*(i) {
+		equal(this.x, "test");
+	}, thisArg);
+});
+
+asyncTest("thisArg works in generator", function*() {
+	var thisArg = {x:"test"};
+	var gen = function*() {
+		equal(this, thisArg);
+	}
+	yield gen.call(thisArg);
+});
+
+asyncTest("run apply generator", function*() {
+	var thisArg = {x:"test"};
+	var args = [1];
+	var gen = function*() {
+		deepEqual(_.toArray(arguments), args);
+		equal(this, thisArg);
+	}
+	yield gen.apply(thisArg, args).run();
+});

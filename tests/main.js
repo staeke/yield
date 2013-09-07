@@ -373,3 +373,37 @@ asyncTest("run apply generator", function*() {
 	}
 	yield gen.apply(thisArg, args).run();
 });
+
+asyncTest("lodash bind works with generators", function*() {
+	var gen = function*() {
+		equal(this, "test");
+	};
+	yield _.bind(gen, "test");
+});
+
+asyncTest("lodash bindAll works with generators", function*() {
+	var a = {
+		gen: function*() {
+			deepEqual(this, a, "'this' scope right");
+		}
+	}
+	_.bindAll(a);
+	var f = a.gen;
+	yield f();
+});
+
+asyncTest("lodash bindAll works with named generators", function*() {
+	var a = {
+		genBound: function*() {
+			deepEqual(this, a, "'this' scope right");
+		},
+		genNotBound: function*() {
+			notDeepEqual(this, a, "'this' not object when not bound")
+		}
+	}
+	_.bindAll(a, "genBound");
+	var gb = a.genBound;
+	yield gb();
+	var gnb = a.genNotBound;
+	yield gnb();
+});

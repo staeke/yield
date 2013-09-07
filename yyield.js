@@ -136,6 +136,8 @@ window.Y = (function() {
 		var _invoke = _.invoke;
 		var _every = _.every;
 		var _some = _.some;
+		var _bind = _.bind;
+		var _bindAll = _.bindAll;
 
 		var mapThenFuncOverride = function(origFunc) {
 			return function(collection, generatorCallback, thisArg) {
@@ -168,7 +170,30 @@ window.Y = (function() {
 					}
 				}
 			};
-		}
+		};
+
+		var genBind = function(func, thisArg) {
+			if (!isGeneratorFunction(func)) {
+				return _bind(func, thisArg);
+			}
+			return function* boundGenerator() {
+				return func.apply(thisArg, arguments);
+			}
+		};
+
+		var genBindAll = function(object) {
+			var funcs = _.functions(object);
+			if (arguments.length > 1) {
+				funcs = _(object).pick(_.toArray(arguments).slice(1));
+			}
+			if (_some(funcs, isGeneratorFunction)) {
+				_.each(funcs, function(key) {
+					object[key] = genBind(object[key], object);
+				});
+				return object;
+			}
+			return _bindAll.apply(this, arguments);
+		};
 
 		_.mixin({
 			"toGenerators": makeGenerators,
@@ -176,7 +201,9 @@ window.Y = (function() {
 			"forEach": genEach,
 			"filter": genFilter,
 			"select": genFilter,
-			"reject": genReject
+			"reject": genReject,
+			"bind": genBind,
+			"bindAll": genBindAll
 		});
 	}
 
@@ -341,6 +368,7 @@ window.Y = (function() {
 			if (isGeneratorFunction(item)) {
 				log("Running generator function");
 				runGeneratorAsAsync(item(), cb);
+				return;
 			}
 			else if (isGeneratorObject(item)) {
 				if (item.__returnArguments) {
@@ -363,44 +391,42 @@ window.Y = (function() {
 						});
 					});
 				}
+				return;
 			}
 			else if (isNodeStyleAsyncFunction(item)) {
-		    log("Running yielded node style async function");
+		    	log("Running yielded node style async function");
 				item (function(err, result) {
 					if (arguments.length > 2) {
 						result = _.toArray(arguments).slice(1);
 					}
 					cb(err, result);
 				});
+				return;
 			}
 			else if (isPromise(item)) {
-		    log("Running promise");
+		    	log("Running promise");
 				item.then(function(result) {
 					if (arguments.length > 1) {
 						result = _.toArray(arguments);
 					}
 					cb(null, result);
 				}, cb);
+				return;
 			}
 			else if (_.isArray(item) && _every(item, isAsyncRunnable)) {
 				log("Running parallel array");
 				runParallel(item)(cb);
+				return;
 			}
 			else if (isSuccessFailureChainer(item)) {
 				(item.error || item.failure)(cb);
 				item.success(function(result) { cb(null, result); })
+				return;
 			}
-			else {
-				var val = item.valueOf();
-				if (val && val !== item && !isVal) {
-					return runItemAsAsync(val, cb, true, isValueOk);
-				}
-				if (isValueOk) {
-					cb(null, item);
-					return;
-				}
+			var val = item.valueOf();
+			if (val && val !== item && !isVal) {
+				return runItemAsAsync(val, cb, true, isValueOk);
 			}
-			return;
 		}
 
 		if (isValueOk) {

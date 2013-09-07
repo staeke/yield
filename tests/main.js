@@ -1,6 +1,8 @@
-var Y = require("../yyield");
-var $ = require("jquery-deferred");
-var _ = require("lodash");
+if (typeof require !== "undefined") {
+	var Y = require("../yyield");
+	var $ = require("jquery-deferred");
+	var _ = require("lodash");
+}
 
 // Setup logging
 Y.log = function() {

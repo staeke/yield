@@ -189,7 +189,7 @@ var JsonClient = require('request-json').JsonClient;
 
 function* fetchUrl(url) {
 	return function(cb) {
-		new JsonClient("http://localhost").get({ uri: url }, cb)
+		new JsonClient("http://localhost").get(url, cb)
 	};
 }
 

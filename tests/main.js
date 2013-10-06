@@ -440,3 +440,14 @@ asyncTest("Y.gen works with function containing functions", function*() {
 	var gen = Y.gen(obj);
 	yield gen.work("param");
 });
+
+asyncTest("Y.gen works with function circular references", function*() {
+	var obj = function() {}
+	obj.work = function(cb) {
+		ok(true, "Worked");
+		cb();
+	};
+	obj.work.fn = obj;
+	var gen = Y.gen(obj);
+	yield gen.work();
+});

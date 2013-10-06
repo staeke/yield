@@ -207,11 +207,29 @@ window.Y = (function() {
 		});
 	}
 
-	// TODO: Handle deep objects and possibly return values
+	// Curently we only handle 2 levels (to avoid nasty side effects). If needed, implement deeper recursion
 	function makeGenerators(objOrMethod, thisScope) {
-		var proxy;
+		var proxy = makeGeneratorsShallow(objOrMethod, thisScope);
+		
+		var subFunctions = _.functions(objOrMethod);
+		if (subFunctions.length > 0) {
+			if (!proxy) proxy = {}
+
+			_.each(subFunctions, function(fnName) {
+				proxy[fnName] = makeGeneratorsShallow(objOrMethod[fnName], objOrMethod);
+			});
+		}
+
+		if (proxy) {
+			return proxy;
+		}
+
+		throw new Error("Unsupported object [" + objOrMethod + "] for conversion to generator. Only functions and function members of objects of type Object are supported. Received");
+	}
+
+	function makeGeneratorsShallow(objOrMethod, thisScope) {
 		if (_.isFunction(objOrMethod)) {
-			proxy = function*() {
+			return function*() {
 				var args = arguments;
 				return function(cb) {
 					// Warning on too many/few arguments? Might be left hanging
@@ -221,19 +239,6 @@ window.Y = (function() {
 				};
 			};
 		}
-		var subFunctions = _.functions(objOrMethod);
-		if (subFunctions.length > 0) {
-			if (!proxy) proxy = {}
-			
-			_.each(subFunctions, function(fnName) {
-				proxy[fnName] = makeGenerators(objOrMethod[fnName], objOrMethod);
-			});
-		}
-		if (proxy) {
-			return proxy;
-		}
-
-		throw new Error("Unsupported object [" + objOrMethod + "] for conversion to generator. Only functions and function members of objects of type Object are supported. Received");
 	}
 
 	function isGeneratorObject(obj) {

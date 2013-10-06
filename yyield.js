@@ -209,22 +209,28 @@ window.Y = (function() {
 
 	// TODO: Handle deep objects and possibly return values
 	function makeGenerators(objOrMethod, thisScope) {
+		var proxy;
 		if (_.isFunction(objOrMethod)) {
-			return function*() {
+			proxy = function*() {
 				var args = arguments;
 				return function(cb) {
+					// Warning on too many/few arguments? Might be left hanging
 					args = _.toArray(args);
 					args.push(cb);
 					return objOrMethod.apply(thisScope, args);
 				};
 			};
 		}
-		else if (_.isObject(objOrMethod)) {
-			var copy = _.clone(objOrMethod);
-			_.each(_.functions(objOrMethod), function(fnName) {
-				copy[fnName] = makeGenerators(objOrMethod[fnName], objOrMethod);
+		var subFunctions = _.functions(objOrMethod);
+		if (subFunctions.length > 0) {
+			if (!proxy) proxy = {}
+			
+			_.each(subFunctions, function(fnName) {
+				proxy[fnName] = makeGenerators(objOrMethod[fnName], objOrMethod);
 			});
-			return copy;
+		}
+		if (proxy) {
+			return proxy;
 		}
 
 		throw new Error("Unsupported object [" + objOrMethod + "] for conversion to generator. Only functions and function members of objects of type Object are supported. Received");

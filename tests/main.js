@@ -407,3 +407,36 @@ asyncTest("lodash bindAll works with named generators", function*() {
 	var gnb = a.genNotBound;
 	yield gnb();
 });
+
+asyncTest("Y.gen works with normal function", function*() {
+	var gen = Y.gen(function(cb) { 
+		ok(true, "Entered func");
+		cb();
+	});
+	yield gen();
+});
+
+asyncTest("Y.gen works with object and private data", function*() {
+	var gen = Y.gen({
+		data: "test",
+		work: function(param, cb) { 
+			equal(param, "param", "Correct parameter passing");
+			equal(this.data, "test", "Correct scope");
+			cb();
+		}
+	});
+	yield gen.work("param");
+});
+
+asyncTest("Y.gen works with function containing functions", function*() {
+	var obj = function() {}
+	obj.data = "test";
+	obj.work = function(param, cb) { 
+		equal(param, "param", "Correct parameter passing");
+		equal(this.data, "test", "Correct scope");
+		cb();
+	};
+
+	var gen = Y.gen(obj);
+	yield gen.work("param");
+});

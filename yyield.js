@@ -47,6 +47,7 @@ window.Y = (function() {
 	   * by a GeneratorFunction. Returns true/false.
 	   */
 		isGeneratorObject: isGeneratorObject,
+		_: _,
 	  /**
 	   * When yielding multiple object, such as yield [gen1, gen2] and there are multiple errors generated, these will be contained
 	   * in this class. AggregateError supports the property errors which is an array containing the different error objects, and

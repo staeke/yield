@@ -25,39 +25,39 @@ window.Y = (function() {
 	// Export object
 	var exp;
 	module.exports = exp = {
-	  /**
-	   * Use y.gen() on an object or a single function. When used on an object, the this scope will be preserved. Use the second
-	   * parameter to include your own thisScope if needed for the single function case.
-	   * @return {Object}
-	   * @param {Object|Function} objOrMethod
-	   * @param {Object} thisScope
-	   */
+		/**
+		 * Use y.gen() on an object or a single function. When used on an object, the this scope will be preserved. Use the second
+		 * parameter to include your own thisScope if needed for the single function case.
+		 * @return {Object}
+		 * @param {Object|Function} objOrMethod
+		 * @param {Object} thisScope
+		 */
 		gen: makeGenerators,
-	  /**
-	   * Set the log property to have debug information from y sent to a function of your liking. This function will be called
-	   * with a variable number of arguments (1-5) where the first argument is always a string.
-	   */
+		/**
+		 * Set the log property to have debug information from y sent to a function of your liking. This function will be called
+		 * with a variable number of arguments (1-5) where the first argument is always a string.
+		 */
 		log: null,
-	  /**
-	   * This utility function provides a means to query if an object is an ECMAScript 6 Generator function. Returns true/false.
-	   */
+		/**
+		 * This utility function provides a means to query if an object is an ECMAScript 6 Generator function. Returns true/false.
+		 */
 		isGeneratorFunction: isGeneratorFunction,
-	  /**
-	   * This utility function provides a means to query if an object is an ECMAScript 6 Generator object, as returned
-	   * by a GeneratorFunction. Returns true/false.
-	   */
+		/**
+		 * This utility function provides a means to query if an object is an ECMAScript 6 Generator object, as returned
+		 * by a GeneratorFunction. Returns true/false.
+		 */
 		isGeneratorObject: isGeneratorObject,
 		_: _,
-	  /**
-	   * When yielding multiple object, such as yield [gen1, gen2] and there are multiple errors generated, these will be contained
-	   * in this class. AggregateError supports the property errors which is an array containing the different error objects, and
-	   * an overriden stack property.
-	   */
+		/**
+		 * When yielding multiple object, such as yield [gen1, gen2] and there are multiple errors generated, these will be contained
+		 * in this class. AggregateError supports the property errors which is an array containing the different error objects, and
+		 * an overriden stack property.
+		 */
 		AggregateError: AggregateError,
-	  /**
-	   * To avoid conflicts, the noConflict export provides a way to reach what the window.Y variable pointed to before inclusion
-	   * of the y script in a browser situation.
-	   */
+		/**
+		 * To avoid conflicts, the noConflict export provides a way to reach what the window.Y variable pointed to before inclusion
+		 * of the y script in a browser situation.
+		 */
 		noConflict: typeof(Y) !== "undefined" && Y,
 		PARALLEL_ERRORS_THROW: 0,
 		PARALLEL_ERRORS_WAIT: 1,
@@ -103,7 +103,7 @@ window.Y = (function() {
 		runGeneratorAsAsync(this, function(err, result) {
 			if (cb) { cb(err, result) };
 			if (err) {
-			  if (deferreds) deferreds[0].reject(err);
+				if (deferreds) deferreds[0].reject(err);
 			}
 			else {
 				if (deferreds) deferreds[0].resolve(result);
@@ -214,7 +214,7 @@ window.Y = (function() {
 	// Curently we only handle 2 levels (to avoid nasty side effects). If needed, implement deeper recursion
 	function makeGenerators(objOrMethod, thisScope) {
 		var proxy = makeGeneratorsShallow(objOrMethod, thisScope);
-		
+
 		var subFunctions = _.functions(objOrMethod);
 		if (subFunctions.length > 0) {
 			if (!proxy) proxy = {}
@@ -343,9 +343,9 @@ window.Y = (function() {
 				genObj = genFunc.throw.apply(genFunc, [err]);
 			}
 			else {
-	      genObj = genFunc.next(result);
-		  }
-	  }
+				genObj = genFunc.next(result);
+			}
+		}
 		catch(e) {
 			return cb(e);
 		}
@@ -409,7 +409,7 @@ window.Y = (function() {
 				return;
 			}
 			else if (isNodeStyleAsyncFunction(item)) {
-		    	log("Running yielded node style async function");
+					log("Running yielded node style async function");
 				item (function(err, result) {
 					if (arguments.length > 2) {
 						result = _.toArray(arguments).slice(1);
@@ -419,7 +419,7 @@ window.Y = (function() {
 				return;
 			}
 			else if (isPromise(item)) {
-		    	log("Running promise");
+					log("Running promise");
 				item.then(function(result) {
 					if (arguments.length > 1) {
 						result = _.toArray(arguments);

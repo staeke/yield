@@ -161,11 +161,14 @@ window.Y = (function() {
 				return _each(collection, generatorCallback, thisArg);
 			}
 			return function*(){
+
+				var colVal = collection.valueOf();
+
 				var index = -1,
-						length = collection.length;
+						length = colVal.length;
 
 				while (++index < length) {
-					if ((yield generatorCallback.call(thisArg, collection[index], index, collection)) === false) {
+					if ((yield generatorCallback.call(thisArg, colVal[index], index, colVal)) === false) {
 						break;
 					}
 				}

@@ -187,7 +187,7 @@ window.Y = (function() {
 				funcs = _(object).pick(_.toArray(arguments).slice(1));
 			}
 			if (_some(funcs, isGeneratorFunction)) {
-				_.each(funcs, function(key) {
+				_each(funcs, function(key) {
 					object[key] = genBind(object[key], object);
 				});
 				return object;
@@ -215,7 +215,7 @@ window.Y = (function() {
 		if (subFunctions.length > 0) {
 			if (!proxy) proxy = {}
 
-			_.each(subFunctions, function(fnName) {
+			_each(subFunctions, function(fnName) {
 				proxy[fnName] = makeGeneratorsShallow(objOrMethod[fnName], objOrMethod);
 			});
 		}
@@ -289,7 +289,7 @@ window.Y = (function() {
 			results = [];
 			left = _.range(args.length);
 			var returned = false;
-			_(args).each(function(arg, i) {
+			_each(args, function(arg, i) {
 				log("Running parallel", i);
 				var funnel = function(err, res) {
 					log("Returned from parallel", i);
@@ -396,7 +396,7 @@ window.Y = (function() {
 					runGeneratorAsAsync(item, function(err, result) {
 						item.__returnArguments = arguments;
 						cb.apply(this, arguments);
-						_(item.__completions).each(function(f) {
+						_each(item.__completions, function(f) {
 							log("Completing wait for generator with", item.__returnArguments);
 							f.apply(this, item.__returnArguments);
 						});

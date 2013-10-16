@@ -424,7 +424,12 @@ window.Y = (function() {
 				}, cb);
 				return;
 			}
-			else if (_.isArray(item) && _every(item, isAsyncRunnable)) {
+			else if (_.isArray(item)) {
+				if (!_every(item, isAsyncRunnable)) {
+					var e = new Error("Yielded array but not all items in the array are asynchronously runnable");
+					cb(e);
+					return;
+				}
 				log("Running parallel array");
 				runParallel(item)(cb);
 				return;

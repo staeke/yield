@@ -270,4 +270,3 @@ function* getTodos() {
 }
 
 ```
-

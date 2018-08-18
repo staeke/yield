@@ -1,5 +1,5 @@
 # Y-yield
-Y-yield is a way to get back to the wonderful land of reliable exceptions and easy to follow asynchronous code using Javascript. Any caveats? Well, it requires the use of upcoming standard ECMAScript 6, so it's anything but mainstream at the moment. However, chances are that the standard is going to be approved during 2013 and then it will only be a matter of time before all browsers (ehm..) have implemented the feature. The new standard gives us syntactical goodies such as "function*" and "yield". But, you may ask yourself, what does it provide? Why yield?
+Y-yield is a way to to build asynchronous javascript applications using generators. As an alternative to `await/async`, working with Node versions from `4.9.1` and all modern browsers except IE11, you can still get reliable exceptions and easy to follow asynchronous. So it's based on generators and yielding, but how does it work? Why yield?
 
 #### The basic idea
 ECMAScript 6 introduces something called generators. They look like this:
@@ -13,7 +13,7 @@ var a = myGenerator();
 var value = a.next(); // first line in myGenerator executes, returns "SomeValue"
 var otherValue = a.next(); // second line in myGenerator executes, returns "SomeValue"
 ```
-Ok...that looks pretty much like Python/Scala/C#/whatever. What does that bring in terms of asynchronous code? Well, the idea is that if we can write our code as a generator generating different asynchronous pieces of code, we can use the built-in wrapping/unwrapping of function bodies and try/catch statements to make our life easier. We could write something like
+That looks pretty much like Python, Scala, or C#. What does that bring in terms of asynchronous code? Well, the idea is that if we can write our code as a generator generating different asynchronous pieces of code, we can use the built-in wrapping/unwrapping of function bodies and try/catch statements to make our life easier. We could write something like
 
 ``` javascript
 function* fetchUrl() {
@@ -36,39 +36,10 @@ function* getTodos(extra) {
 ```
 Note that the generators return objects that we have to "yield" to see the result for. If you get that, you get what it's about.
 
-
-And to just make the "why yield" answer a little clearer:
-* Ever used an async library and just get lost. Where did that call go? No reply, no error, no nothing. Rescue is under way.
-* We can use try/catch again. You've read the posts about avoiding those pesky keywords in asynchronous code (i.e. all code) as you can't rely on them being called. But hey, remember that convenient idea of wrapping a bunch of calls in try/catch and handling a lot of different errors in a grouped way for a piece of code. Perhaps being able to send an error back or outputting to some log. Sure, there are solutions in old callback land such as [node domains](http://nodejs.org/api/domain.html), load balancing workers, and it may be a good idea to die rather than to do stupid things. But, being pragmatic, it's pretty nifty to be able to actually catch all errors within a block of code and decide for yourself.
-* Ever felt a little bad about cluttering your objects, parameters and classes with callbacks here and there. Get ready for cleaner code.
-* Ever written some asynchronous code and made a mistake in the error handler? Maybe you forgot to add one? Maybe your colleague did? Maybe you typed it incorrectly and now your application has just not returned from a call in quite some time. Console is just blank. :(
-- There are all kind of libraries to make asynchronous coding easier. Among the most popular are [async](https://github.com/caolan/async) in node, [jQuery Deferred](http://api.jquery.com/category/deferred-object/) and [Q](https://github.com/kriskowal/q). But there are oh so many ways different libraries handle this. jQuery use its own deferreds and node uses the passing of a function with one callback function. [Sequalize](http://sequelizejs.com/), a MySQL ORM, uses a notion of chaining success and error callbacks. And still other libraries use an option parameter with a success/error callback. For anyone coding javascript, especially in node, it's evident that these conversions take time, are error prone and leave an uneasy feeling of possibly missing something. And even if we don't consider errors, it's often pretty darn hard to follow what's happening, especially if there's a bit of conditional asynchronous extra calls.
-* Asyncronous stack traces? It is pretty saddening to just see that EventEmitter in your stack trace, right? With that said, there are node packages to make it easier such as [trycatch](https://github.com/CrabDude/trycatch).
-* ECMAScript is in a way catching up with this. Async handling has been major recent lanaguage features in languages such as C#, F#, Scala,
-
-So let's try it out!
-If you want to look at more examples, please have a look at the [tests](https://github.com/staeke/yield/blob/master/tests/main.js).
-
 ## Prerequisites.
 #### For node
-1. Install node js, minimum 0.11.2, but preferred 0.11.4, i.e. experimental branch. NOTE: 0.10.x branch does NOT work yet.
-2. Remember to run with "node --harmony"  !
-3. In your scripts, use: var Y = require("yyield");
-
-#### In Chrome
-1. Install Chrome canary from https://www.google.com/intl/en/chrome/browser/canary.html
-2. In Chrome canary, go to the address chrome://flags/. Find "Enable Experimental JavaScript" and click "Enable" for that feature. Restart Chrome.
-3. First, include [underscore.js](https://github.com/jashkenas/underscore) or [lodash.js](https://github.com/lodash/lodash)
-4. After that script include, include yyield. AMD is not implemented yet. Please use either:
-``` HTML
-	<script src="yyield.js"></script>
-```
-	...or require("yyield") with [RequireJS](http://requirejs.org/) and r.js
-
-5. Now Y-yield is accessible through window.Y. If something else was previuosly attached you can reach it at window.Y.noConflict
-
-#### What about IE/Firefox/Opera/Safari/PhantomJS/etc?
-I will add supprt and tests as those browsers support generators. At present, they don't
+1. Install node js, minimum 4.9.1 (but works with the `--harmony` flag since `0.11.4`.
+3. In your scripts, use: `var Y = require("yyield")` (or `import * as Y from 'yyield`)
 
 
 ## Usage
@@ -270,3 +241,15 @@ function* getTodos() {
 }
 
 ```
+## So why use this? Why yield?
+
+- Ever used an async library and just get lost. Where did that call go? No reply, no error, no nothing. Rescue is under way.
+- We can use try/catch again. You've read the posts about avoiding those pesky keywords in asynchronous code (i.e. all code) as you can't rely on them being called. But do you remember that convenient idea of wrapping a bunch of calls in try/catch and handling a lot of different errors in a grouped way for a piece of code. Perhaps being able to send an error back or outputting to some log. Sure, there are solutions in old callback land such as [node domains](http://nodejs.org/api/domain.html), load balancing workers, and it may be a good idea to die rather than to do stupid things. But, being pragmatic, it's pretty nifty to be able to actually catch all errors within a block of code and decide for yourself.
+- Ever felt a little bad about cluttering your objects, parameters and classes with callbacks here and there. Get ready for cleaner code.
+- Ever written some asynchronous code and made a mistake in the error handler? Maybe you forgot to add one? Maybe your colleague did? Maybe you typed it incorrectly and now your application has just not returned from a call in quite some time. Console is just blank. :(
+- There are all kind of libraries to make asynchronous coding easier. Among the most popular are [async](https://github.com/caolan/async) in node, [jQuery Deferred](http://api.jquery.com/category/deferred-object/) and [Q](https://github.com/kriskowal/q). But there are oh so many ways different libraries handle this. jQuery use its own deferreds and node uses the passing of a function with one callback function. [Sequalize](http://sequelizejs.com/), a MySQL ORM, uses a notion of chaining success and error callbacks. And still other libraries use an option parameter with a success/error callback. For anyone coding javascript, especially in node, it's evident that these conversions take time, are error prone and leave an uneasy feeling of possibly missing something. And even if we don't consider errors, it's often pretty darn hard to follow what's happening, especially if there's a bit of conditional asynchronous extra calls.
+* Asyncronous stack traces? It is pretty saddening to just see that EventEmitter in your stack trace, right? With that said, there are node packages to make it easier such as [trycatch](https://github.com/CrabDude/trycatch).
+* ECMAScript is in a way catching up with this. Async handling has been major recent lanaguage features in languages such as C#, F#, Scala,
+
+So let's try it out!
+If you want to look at more examples, please have a look at the [tests](https://github.com/staeke/yield/blob/master/tests/main.js).
